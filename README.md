@@ -14,8 +14,9 @@ jupyter notebook or jupyter lab running in condas, with a working R kernel (we u
 
 ## For upstream analysis.
 Anacondas.
+
 To run the demultiplexing, you will need to install qiime1. I recommend using anacondas to set up the following environment
-# conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda
+`# conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
 
 To run dada2, you will need R (I am usign version 3.4.1).
 Within R you will need to install, with install.packages()
