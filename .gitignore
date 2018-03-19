@@ -14,6 +14,9 @@ data1/*
 # Jupyter notebook checkpoints
 .ipynb_checkpoints
 
+## Backup emacs files
+*~
+
 ## R files that don't need to be propigated
 
 # History files
