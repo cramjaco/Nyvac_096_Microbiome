@@ -1,0 +1,29 @@
+## Directories with intermediatly processed data.
+# Raw sequence data - We will include this eventually
+raw096seq/*
+
+# Intermediatly processed data from 096, from DADA2 and qiime.
+proc096/*
+
+# Output of the qiime demultiplexing that gets fed to DADA2
+for_dada2/*
+
+# Output of DADA2 and phangorn and DADA2's classifier
+data1/*
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints
+
+## R files that don't need to be propigated
+
+# History files
+.Rhistory
+
+# Example code in package build process
+*-Ex.R
+
+# R data files from past sessions
+.Rdata
+
+# RStudio files
+.Rproj.user/
