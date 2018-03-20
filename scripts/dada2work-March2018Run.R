@@ -26,6 +26,7 @@ filtFs <- file.path(filt_path, paste0(sample.names, "_F_filt.fastq.gz"))
 out <- filterAndTrim(fnFs, filtFs, trimLeft = 22, truncLen=300, maxLen=500, maxN=0, maxEE=2, truncQ=2, rm.phix=TRUE,
                  compress=TRUE, multithread=TRUE)
 
+print('learing errors')
 ptm = proc.time()
 errF <- learnErrors(filtFs, multithread=TRUE)
 proc.time() - ptm
@@ -39,12 +40,14 @@ dev.off()
 derepFs <- derepFastq(filtFs, verbose=TRUE)
 names(derepFs) <- sample.names
 
+print('run dada function')
 ptm <- proc.time()
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE, HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32, pool = TRUE)
 proc.time() - ptm
 
 seqtab <- makeSequenceTable(dadaFs)
 
+print('remove chimeras')
 ptm <- proc.time()
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 proc.time() - ptm # 3 seconds

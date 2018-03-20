@@ -4,6 +4,7 @@
 # conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda
 
 # move out of scripts directory and into base
+
 cd ..
 
 echo "clear directories, if they exist"
@@ -75,3 +76,5 @@ time cp proc096/plate66/split/* for_dada2
 
 echo "turn off qiime"
 source deactivate
+
+cd scripts

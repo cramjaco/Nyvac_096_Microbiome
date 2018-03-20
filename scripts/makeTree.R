@@ -21,12 +21,12 @@ fit = pml(treeNJ, data=phang.align)
 fitGTR <- update(fit, k=4, inv=0.2)
 
 ptm <- proc.time() # slow step
-fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+fitGTRopt <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
                     rearrangement = "stochastic", control = pml.control(trace = 0))
 
 proc.time() - ptm #~7000 seconds
 
 library(phyloseq)
-pt <- phy_tree(fitGTR$tree)
+pt <- phy_tree(fitGTRopt$tree)
 
 write.tree(pt, file="data1/phylogeny096Mar2018tre.tre")
