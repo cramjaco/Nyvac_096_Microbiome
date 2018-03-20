@@ -9,23 +9,29 @@ rownames(seqtab.nochim) <- seqtab.nochim0[,1]
 seqs <- colnames(seqtab.nochim)
 names(seqs) <- seqs
 
+print('set seed to 33')
+set.seed(33)
+
+print('alligning sequences')
 ptm <- proc.time()
 alignment <- AlignSeqs(DNAStringSet(seqs), anchor = NA)
 proc.time() - ptm
 
-
+print('initial tree builing')
 phang.align <- phyDat(as(alignment, "matrix"), type="DNA")
 dm <- dist.ml(phang.align)
 treeNJ <- NJ(dm) # Note, tip order != sequence order
 fit = pml(treeNJ, data=phang.align)
 fitGTR <- update(fit, k=4, inv=0.2)
 
+print('optimizing tree')
 ptm <- proc.time() # slow step
 fitGTRopt <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
                     rearrangement = "stochastic", control = pml.control(trace = 0))
 
 proc.time() - ptm #~7000 seconds
 
+print('saving tree')
 library(phyloseq)
 pt <- phy_tree(fitGTRopt$tree)
 
