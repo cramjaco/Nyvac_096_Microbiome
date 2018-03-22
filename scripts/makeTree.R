@@ -9,9 +9,6 @@ rownames(seqtab.nochim) <- seqtab.nochim0[,1]
 seqs <- colnames(seqtab.nochim)
 names(seqs) <- seqs
 
-print('set seed to 33')
-set.seed(33)
-
 print('alligning sequences')
 ptm <- proc.time()
 alignment <- AlignSeqs(DNAStringSet(seqs), anchor = NA)

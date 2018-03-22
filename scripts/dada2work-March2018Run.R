@@ -23,9 +23,6 @@ fnFs <- file.path(path, fnFs0)
 filt_path <- file.path(path, "filtered")
 filtFs <- file.path(filt_path, paste0(sample.names, "_F_filt.fastq.gz"))
 
-print('set seed to 33')
-set.seed(33)
-
 print('filter and trim sequences')
 out <- filterAndTrim(fnFs, filtFs, trimLeft = 22, truncLen=300, maxLen=500, maxN=0, maxEE=2, truncQ=2, rm.phix=TRUE,
                  compress=TRUE, multithread=TRUE)

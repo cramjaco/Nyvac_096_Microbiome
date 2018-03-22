@@ -6,7 +6,6 @@ seqtab.nochim0 <- read.csv("data1/seqtab.nochimMar2018.csv", row.names = 1)
 seqtab.nochim1 <- as.matrix(seqtab.nochim0)
 
 ## Part 2: Assign Taxonomy
-set.seed(33)
 seqs <- getSequences(seqtab.nochim1)
 seqsRC <- dada2:::rc(seqs)
 seqsRChead <- seqsRC[1:10]
