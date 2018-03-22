@@ -35,6 +35,11 @@ This can be run independently of the downstream analysis. It defaults to using d
 ## Downstream analysis.
 The order for this is demultiplex, call SVs, make tree, generate taxonomic information.
 
+These scripts can be called in order by calling, from the `scripts\` directory
+all_upstream.sh
+
+Individual pieces can be run as follows:
+
 To demultiplex, run `sh scripts/demultBothPlates.sh`
 To remake dada2 sequence varients run `Rscript dada2work-March2018Run.R`. One can also open the r script and run it in any R interpreter. (This is true of all of the subsequent R steps. Such a process makes for substantially easier debugging.
 
