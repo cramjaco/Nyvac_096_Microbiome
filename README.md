@@ -22,9 +22,9 @@ The downstream analysis can be run without re-doing the upstream portion. We def
      * ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
 
  * For the phylogenetic tree you will need to install the following, within R with install.packages
-  ** tidyverse
-  ** phangorn
-  ** DECIPHER
+   * tidyverse
+   * phangorn
+   * DECIPHER
 
 ## For downstream analyis:
  * jupyter notebook or jupyter lab running in condas
@@ -47,11 +47,8 @@ These scripts can be called in order by calling, from the `scripts\` directory
 Individual pieces can be run as follows:
 
  * To demultiplex, run `sh scripts/demultBothPlates.sh`
-
  * To remake dada2 sequence varients run `Rscript dada2work-March2018Run.R`. One can also open the r script and run it in any R interpreter. (This is true of all of the subsequent R steps. Such a process makes for substantially easier debugging.
-
  * To make the phylogenetic tree `Rscript makeTree.R`
-
  * To generate taxonomic information first acquire necessary training data by running `sh pull_training.sh`. Then run `Rscript dada2taxonomy-March2018Run.R`.
 
 ## Downstream analysis.
