@@ -11,6 +11,9 @@ for_dada2/*
 # Output of DADA2 and phangorn and DADA2's classifier
 data1/*
 
+# Old runs folder
+OldRuns
+
 # Jupyter notebook checkpoints
 .ipynb_checkpoints
 
