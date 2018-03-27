@@ -12,7 +12,7 @@ for_dada2/*
 data1/*
 
 # Old runs folder
-OldRuns
+OldRuns/
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints
