@@ -16,11 +16,10 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 `# conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
 
  * To run dada2, you will need R (I am usign version 3.4.1).
-  ** You should be able to do this with `conda install -c r r-essentials r-irkernel`
-
-  ** Within R you will need to install, with install.packages()
-   *** dada2 (version 1.4.0) and
-   *** ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
+   ** You should be able to do this with `conda install -c r r-essentials r-irkernel`
+   ** Within R you will need to install, with install.packages()
+      *** dada2 (version 1.4.0) and
+      *** ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
 
  * For the phylogenetic tree you will need to install the following, within R with install.packages
   ** tidyverse
