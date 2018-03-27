@@ -16,31 +16,31 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 `# conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
 
  * To run dada2, you will need R (I am usign version 3.4.1).
- ** You should be able to do this with `conda install -c r r-essentials r-irkernel`
+  ** You should be able to do this with `conda install -c r r-essentials r-irkernel`
 
- ** Within R you will need to install, with install.packages()
- *** dada2 (version 1.4.0) and
- *** ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
+  ** Within R you will need to install, with install.packages()
+   *** dada2 (version 1.4.0) and
+   *** ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
 
  * For the phylogenetic tree you will need to install the following, within R with install.packages
- ** tidyverse
- ** phangorn
- ** DECIPHER
+  ** tidyverse
+  ** phangorn
+  ** DECIPHER
 
 ## For downstream analyis:
  * jupyter notebook or jupyter lab running in condas
  *  a working R kernel for jupyter notebook (we used version 3.4.1).
- ** You should be able to do this with `conda install -c r r-essentials r-irkernel` (If you haven't already)
+  ** You should be able to do this with `conda install -c r r-essentials r-irkernel` (If you haven't already)
  * View the notebook file and install every package in the __Library__'s section by opening an R terminal and running install.packages() for each one not already present on your system. Some of them require bioconductor.
 
 # How to run analyses
 ## Upstream analysis
 
 The order for this is:
-* demultiplex
-* call SVs
-* make tree
-* generate taxonomic information.
+ * demultiplex
+ * call SVs
+ * make tree
+ * generate taxonomic information.
 
 These scripts can be called in order by calling, from the `scripts\` directory
 `all_upstream.sh`
