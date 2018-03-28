@@ -54,3 +54,5 @@ Individual pieces can be run as follows:
 ## Downstream analysis.
 
 This can be run independently of the downstream analysis. It defaults to using data from the `data\` directory. In theory, all one should need to do is open the Mar2018_096.ipynb file in jupyter notebook or jupyter lab and run all of the cells.
+
+If you want the script to run faster, set `jnperm <- 9999`, the cost of this is that the p-values are not calculated as precisely. If you want p-values that don't fluctuate from run to run, set `jnperm <- 99999` and maybe go get lunch while the file is running.
