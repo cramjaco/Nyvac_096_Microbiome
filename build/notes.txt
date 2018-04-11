@@ -1,0 +1,100 @@
+April 6 2018
+Installation notes.
+
+Phangorn and dada2 require -c condas-forge r rather than -r r, for whatever reason
+
+Mirkat had to be built using condas skeleton. I've uploaded it to anacondas cloud and now it can just be pulled down from the cramjaco repo.
+
+I'll need to discuss adding the condas forge channel for any installation.
+
+Still missing the following packages.
+
+gridExtra
+
+phangorn - may need to be built? no, its bioconductor
+
+DECIPHER - does appear to need to be build -- not in cran. This poses a problem, may use install.packages for this one.
+
+imputeMissings - skeleton build?
+
+compositions -- build from skeleton, requires r-bayesm & r-tensora
+r-bayesm is in the trent channel
+
+car
+
+## test installing each of these
+conda install -n test6 -c r r-gridextra
+conda install -n test6 -c bioconductor r-phangorn
+conda install -n test6 -c trent r-bayesm
+
+conda skeleton cran tensorA
+conda build r-tensora
+anaconda upload ~/Programs/anaconda3/conda-bld/linux-64/
+
+conda config --add channels cramjaco
+conda config --add channels trent
+conda config --add channels conda-forge # so its on top of the list
+
+conda build r-compositions
+
+still complaining about bayesm. building my own now.
+
+conda upload
+r-tensora
+r-bayesm
+r-compositions
+r-imputemissings
+
+
+conda install -n test6 -c cramjaco r-imputemissings r-compositions
+
+I tried to build r-decipher from git source.
+
+Dependencies shouldn't include things that come in base r.
+
+Currently getting error message that it cant checkout v2.6.0.
+What if I just do away with that bit in the meta.yaml file?
+
+
+4-11-2018
+The compositions package, called not with library, but directly, apparently requires mclust, which allegedly installed without problem, but throws some silly error message:
+
+library(mclust)
+
+Error: package or namespace load failed for ‘mclust’ in dyn.load(file, DLLpath = DLLpath, ...):
+ unable to load shared object '/home/jcram/Programs/anaconda3/envs/nyvac-lab-1/lib/R/library/mclust/libs/mclust.so':
+  `maximal number of DLLs reached...
+Traceback:
+
+1. library(mclust)
+2. tryCatch({
+ .     attr(package, "LibPath") <- which.lib.loc
+ .     ns <- loadNamespace(package, lib.loc)
+ .     env <- attachNamespace(ns, pos = pos, deps)
+ . }, error = function(e) {
+ .     P <- if (!is.null(cc <- conditionCall(e))) 
+ .         paste(" in", deparse(cc)[1L])
+ .     else ""
+ .     msg <- gettextf("package or namespace load failed for %s%s:\n %s", 
+ .         sQuote(package), P, conditionMessage(e))
+ .     if (logical.return) 
+ .         message(paste("Error:", msg), domain = NA)
+ .     else stop(msg, call. = FALSE, domain = NA)
+ . })
+3. tryCatchList(expr, classes, parentenv, handlers)
+4. tryCatchOne(expr, names, parentenv, handlers[[1L]])
+5. value[[3L]](cond)
+6. stop(msg, call. = FALSE, domain = NA)
+
+I tried
+ conda install -c conda-forge r-chemometrics
+
+Can't run R from command line apparently unless
+
+https://github.com/bioconda/bioconda-recipes/issues/5350
+
+conda install -n test7 -c conda-forge readline=6.2
+
+doesn't actually help, in my case.
+
+Ok, fun fact. R only lets you load 100 packages. The maximal number of DLLs error means, that I just tried to load my 101st package and so everything exploaded. I've skipped some calles to library by calling the one dada2 and one phanorn function with the :: operator.

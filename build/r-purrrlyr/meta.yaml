@@ -1,0 +1,98 @@
+{% set version = '0.0.2' %}
+
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-purrrlyr
+  version: {{ version|replace("-", "_") }}
+
+source:
+  fn: purrrlyr_0.0.2.tar.gz
+  url:
+    - {{ cran_mirror }}/src/contrib/purrrlyr_0.0.2.tar.gz
+    - {{ cran_mirror }}/src/contrib/Archive/purrrlyr/purrrlyr_0.0.2.tar.gz
+  sha256: 2cb04c7847e6d87c4183669bb7f325450d49a12bf46489357c93d67ed07a76f2
+
+build:
+  merge_build_host: True  # [win]
+  # If this is a new build for the same version, increment the build number.
+  number: 0
+
+  # This is required to make R link correctly on Linux.
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+# Suggests: testthat, covr
+requirements:
+  build:
+    - {{ compiler('c') }}          # [not win]
+    - {{ compiler('cxx') }}        # [not win]
+    - {{native}}toolchain          # [win]
+    - {{posix}}filesystem          # [win]
+    - {{posix}}make
+
+  host:
+    - r-base
+    - r-bh
+    - r-rcpp
+    - r-dplyr >=0.4.3
+    - r-lazyeval >=0.2.0
+    - r-magrittr >=1.5
+    - r-purrr
+
+  run:
+    - r-base
+    - {{native}}gcc-libs           # [win]
+    - r-bh
+    - r-rcpp
+    - r-dplyr >=0.4.3
+    - r-lazyeval >=0.2.0
+    - r-magrittr >=1.5
+    - r-purrr
+
+test:
+  commands:
+    # You can put additional test commands to be run here.
+    - $R -e "library('purrrlyr')"           # [not win]
+    - "\"%R%\" -e \"library('purrrlyr')\""  # [win]
+
+  # You can also put a file called run_test.py, run_test.sh, or run_test.bat
+  # in the recipe that will be run at test time.
+
+  # requires:
+    # Put any additional test requirements here.
+
+about:
+  home: https://github.com/hadley/purrrlyr
+  license: GPL-3 | file LICENSE
+  summary: Some functions at the intersection of 'dplyr' and 'purrr' that  formerly lived in
+    'purrr'.
+  license_family: GPL3
+
+# The original CRAN metadata for this package was:
+
+# Package: purrrlyr
+# Title: Tools at the Intersection of 'purrr' and 'dplyr'
+# Version: 0.0.2
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("Lionel", "Henry", , "lionel.hry@gmail.com", "ctb"), person("RStudio", role = "cph") )
+# Description: Some functions at the intersection of 'dplyr' and 'purrr' that  formerly lived in 'purrr'.
+# License: GPL-3 | file LICENSE
+# LazyData: true
+# Imports: magrittr (>= 1.5), dplyr (>= 0.4.3), purrr, Rcpp, lazyeval (>= 0.2.0)
+# Suggests: testthat, covr
+# LinkingTo: Rcpp, BH
+# URL: https://github.com/hadley/purrrlyr
+# BugReports: https://github.com/hadley/purrrlyr/issues
+# RoxygenNote: 6.0.1
+# NeedsCompilation: yes
+# Packaged: 2017-05-12 14:03:15 UTC; lionel
+# Author: Hadley Wickham [aut, cre], Lionel Henry [ctb], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-05-13 13:01:40 UTC
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
