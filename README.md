@@ -13,29 +13,28 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 ## For upstream analysis.
  * A running version of Anacondas.
  * To run the demultiplexing, you will need to install qiime1. I recommend using anacondas to set up the following environment
-`# conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
+ 
+` conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
 
- * To run dada2, you will need R (I am usign version 3.4.1).
-   * You should be able to do this with `conda install -c r r-essentials r-irkernel`
-   * Within R you will need to install, with install.packages()
-     * dada2 (version 1.4.0) and
-     * ggplot2 (I am using 2.2.1.9000, you can probably get away with using a near by normal version thereof, I ended up installing the special version trying to work around some other problem and never bother to revert.)'
-
- * For the phylogenetic tree you will need to install the following, within R with install.packages
-   * tidyverse
-   * phangorn
-   * DECIPHER
+ * To run everything else (both upstream and downstream), you will need a bunch of R packages, which you can download and install with a custom condas environment.
+ 
+ `conda create env cramjaco/nyvac-lab-2`
+     
+     * This environment includes, among other things, R version 3.4.1, DADA2, phangorn, phyloseq, and other packages needed to complete the analysis.
+     
 
 ## For downstream analyis:
- * jupyter notebook or jupyter lab running in condas
- *  a working R kernel for jupyter notebook (we used version 3.4.1).
-  ** You should be able to do this with `conda install -c r r-essentials r-irkernel` (If you haven't already)
- * View the notebook file and install every package in the __Library__'s section by opening an R terminal and running install.packages() for each one not already present on your system. Some of them require bioconductor.
+ * jupyter notebook or jupyter lab running in conda
+     * allow jupyter lab/notebook to point at the nyvac-lab-2 environment with 
+     `conda install nb_conda`
+     * Target the nyvac-lab-2 environment from the Kernel>Change Kernel menu option
 
 # How to run analyses
 ## Upstream analysis
 
-The order for this is:
+Upstream analysis is not necessary to redo the downstream analysis.
+
+The order for this analysis is:
  * demultiplex
  * call SVs
  * make tree
@@ -44,9 +43,15 @@ The order for this is:
 These scripts can be called in order by calling, from the `scripts\` directory
 `all_upstream.sh`
 
+On systems running slurm (such as Fred Hutch's rhino cluster), you can call `sbatch scripts/upstream.sbatch` in order to request a 16 node cluster. This should take about 8 hours to run. The slow step is remaking the phylogenetic tree. If I was going to do this again from scratch, I'd probably use raxml.
+
+all_upstream.sh just calls other scripts, those pieces can be run as follows:
+
 Individual pieces can be run as follows:
 
  * To demultiplex, run `sh scripts/demultBothPlates.sh`
+ * The next three scripts must be run inside of the nyvac-lab-2 environment
+ `source attach nyvac-lab-2`
  * To remake dada2 sequence varients run `Rscript dada2work-March2018Run.R`. One can also open the r script and run it in any R interpreter. (This is true of all of the subsequent R steps. Such a process makes for substantially easier debugging.
  * To make the phylogenetic tree `Rscript makeTree.R`
  * To generate taxonomic information first acquire necessary training data by running `sh pull_training.sh`. Then run `Rscript dada2taxonomy-March2018Run.R`.
@@ -55,4 +60,6 @@ Individual pieces can be run as follows:
 
 This can be run independently of the downstream analysis. It defaults to using data from the `data\` directory. In theory, all one should need to do is open the Mar2018_096.ipynb file in jupyter notebook or jupyter lab and run all of the cells.
 
-If you want the script to run faster, set `jnperm <- 9999`, the cost of this is that the p-values are not calculated as precisely. If you want p-values that don't fluctuate from run to run, set `jnperm <- 99999` and maybe go get lunch while the file is running.
+If you want to run it on re-analyzed data, find comment out the line  `#upOriginal <- TRUE` and uncomment the line `upOriginal <- FALSE`. 
+
+If you want the script to run faster, set `jnperm <- 9999`, the cost of this is that the p-values are not calculated as precisely. If you want p-values that don't fluctuate from run to run, set `jnperm <- 99999` and maybe go get lunch or similar while the file is running.
