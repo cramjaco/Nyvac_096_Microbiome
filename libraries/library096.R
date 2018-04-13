@@ -387,11 +387,11 @@ mutate_phyloseq_sample <- function(ps, ...){
 }
 
 # https://support.bioconductor.org/p/74637/
-# I am doing the robust method because sometimes p-values don't extend to one. Rather thay only extend to .8 or so.
+# I am doing the robust method because sometimes p-values don't extend to one (in the local tests). Rather thay only extend to .8 or so. This may be an artifact of OTU compositionality.
 robust_qvalue <- function(p){
     tryCatch({qvalue(p)
              },error = function(e){
-        qvalue(p, lambda = seq(0.5, max(p), 0.5))
+        qvalue(p, lambda = seq(0.05, max(p), 0.05))
     })
 }
 

@@ -1,5 +1,0 @@
-source("http://bioconductor.org/biocLite.R")
-biocLite('DECIPHER')
-## biocLite("phyloseq")
-## biocLite("dada2")
-## install.packages("MiRKAT")
