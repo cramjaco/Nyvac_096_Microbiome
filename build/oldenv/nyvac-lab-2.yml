@@ -19,7 +19,7 @@ dependencies:
   - bioconductor-iranges=2.12.0=r3.4.1_0
   - bioconductor-multtest=2.34.0=r3.4.1_0
   - bioconductor-phyloseq=1.22.3=r3.4.1_0
-  - bioconductor-qvalue=2.10.0=r3.4.1_0
+  - bioconductor-qvalue=2.8.0=r3.4.1_0
   - bioconductor-rhdf5=2.22.0=r3.4.1_0
   - bioconductor-rsamtools=1.30.0=r3.4.1_0
   - bioconductor-s4vectors=0.16.0=r3.4.1_0

@@ -1,10 +1,9 @@
 package:
   name: r-decipher
-  version: "2.4.0"
+  version: "2.6.0"
 
 source:
   git_url: https://git.bioconductor.org/packages/DECIPHER
-  git tag: 8ad0cf01505205beed349cb7e0f81e52b78492da
 
 requirements:
   build:
