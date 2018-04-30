@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2018.3.24)  30 APR 2018 12:37
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2018.3.24)  30 APR 2018 13:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**concisePermkernTable1.tex
-(./concisePermkernTable1.tex
+**../tables/concisePermkernTable1.tex --output-directory=../tables
+(../tables/concisePermkernTable1.tex
 LaTeX2e <2011/06/27>
 Babel <3.9h> and hyphenation patterns for 2 languages loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
@@ -518,29 +518,26 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 23.
 
-Overfull \hbox (116.51382pt too wide) in paragraph at lines 23--69
+Overfull \hbox (92.3613pt too wide) in paragraph at lines 23--69
 [][] 
  []
 
-! I can't write on file `concisePermkernTable1.pdf'.
-(Press Enter to retry, or Control-D to exit; default file extension is `.pdf')
-Please type another file name for output: 
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
 (./concisePermkernTable1.aux) ) 
 Here is how much of TeX's memory you used:
- 3536 strings out of 495028
- 47400 string characters out of 6181497
+ 3537 strings out of 495028
+ 47428 string characters out of 6181497
  132706 words of memory out of 5000000
  6673 multiletter control sequences out of 15000+600000
  6789 words of font info for 25 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 41i,9n,35p,314b,130s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,9n,35p,350b,130s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/publi
 c/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
 onts/cm/cmr12.pfb>
-Output written on concisePermkernTable1.pdf (1 page, 27167 bytes).
+Output written on concisePermkernTable1.pdf (1 page, 27329 bytes).
 PDF statistics:
  16 PDF objects out of 1000 (max. 8388607)
  10 compressed objects within 1 object stream
