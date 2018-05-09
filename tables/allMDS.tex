@@ -1,0 +1,67 @@
+\documentclass[12pt]{article} % use larger type; default would be 10pt
+
+\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+
+\definecolor{green}{rgb}{1, 1, .9}
+
+\begin{document}
+ 
+\begin{tabular}{ccccccccccccc}
+\toprule
+Type & Antigen & Month & MDS1 & MDS2 & MDS3 & MDS4 & MDS5 & MDS6 & MDS7 & MDS8 & MDS9 & MDS10\\
+\midrule
+ &  & 0.0 & 0.658 & 0.579 & 0.403 & 0.829 & 0.700 & 0.656 & 0.210 & 0.432 & 0.041 & 0.840\\
+\cmidrule{3-13}
+ &  & 6.5 & 0.175 & 0.371 & 0.755 & 0.556 & 0.122 & 0.196 & 0.428 & 0.377 & 0.905 & 0.935\\
+\cmidrule{3-13}
+ & \multirow{-3}{*}{\centering\arraybackslash gp41} & 12.0 & 0.871 & 0.207 & 0.440 & 0.390 & 0.819 & 0.751 & 0.610 & 0.111 & 0.104 & 0.166\\
+\cmidrule{2-13}
+ &  & 0.0 & 0.325 & 0.690 & 0.570 & 0.952 & 0.806 & 0.571 & 0.141 & 0.940 & 0.981 & 0.531\\
+\cmidrule{3-13}
+ &  & 6.5 & 0.678 & 0.297 & 0.677 & 0.310 & 0.640 & 0.622 & 0.934 & 0.214 & 0.891 & 0.341\\
+\cmidrule{3-13}
+\multirow{-6}{*}{\centering\arraybackslash IgA} & \multirow{-3}{*}{\centering\arraybackslash p24} & 12.0 & 0.390 & 0.683 & 0.259 & 0.447 & 0.079 & 0.501 & 0.608 & 0.156 & 0.630 & 0.129\\
+\cmidrule{1-13}
+ &  & 6.5 & 0.017 & 0.615 & 0.366 & 0.690 & 0.328 & 0.493 & 0.859 & 0.685 & 0.724 & 0.208\\
+\cmidrule{3-13}
+ & \multirow{-2}{*}{\centering\arraybackslash Con.6.gp120.B} & 12.0 & 0.030 & 0.982 & 0.350 & 0.674 & 0.965 & 0.559 & 0.512 & 0.362 & 0.753 & 0.260\\
+\cmidrule{2-13}
+ &  & 0.0 & 0.040 & 0.910 & 0.369 & 0.810 & 0.375 & 0.209 & 0.588 & 0.631 & 0.873 & 0.450\\
+\cmidrule{3-13}
+ &  & 6.5 & 0.058 & 0.266 & 0.268 & 0.918 & 0.714 & 0.144 & 0.670 & 0.417 & 0.179 & 0.666\\
+\cmidrule{3-13}
+ & \multirow{-3}{*}{\centering\arraybackslash gp41} & 12.0 & 0.806 & 0.328 & 0.412 & 0.189 & 0.961 & 0.261 & 0.747 & 0.051 & 0.424 & 0.050\\
+\cmidrule{2-13}
+ &  & 6.5 & 0.602 & 0.890 & 0.289 & 0.592 & 0.397 & 0.603 & 0.422 & 0.164 & 0.042 & 0.965\\
+\cmidrule{3-13}
+ & \multirow{-2}{*}{\centering\arraybackslash gp70 B.CaseA V1-V2} & 12.0 & 0.036 & 0.698 & 0.729 & 0.631 & 0.216 & 0.307 & 0.964 & 0.179 & 0.440 & 0.229\\
+\cmidrule{2-13}
+ &  & 0.0 & 0.428 & 0.238 & 0.925 & 0.182 & 0.070 & 0.060 & 0.664 & 0.616 & 0.479 & 0.401\\
+\cmidrule{3-13}
+ &  & 6.5 & 0.397 & 0.857 & 0.271 & 0.351 & 0.429 & 0.096 & 0.174 & 0.726 & 0.396 & 0.078\\
+\cmidrule{3-13}
+ & \multirow{-3}{*}{\centering\arraybackslash p24} & 12.0 & 0.176 & 0.735 & 0.247 & 0.680 & 0.856 & 0.373 & 0.035 & 0.520 & 0.735 & 0.121\\
+\cmidrule{2-13}
+ &  & 6.5 & 0.030 & 0.563 & 0.217 & 0.964 & 0.203 & 0.923 & 0.878 & 0.864 & 0.100 & 0.408\\
+\cmidrule{3-13}
+\multirow{-12}{*}{\centering\arraybackslash IgG} & \multirow{-2}{*}{\centering\arraybackslash ZM96.gp140} & 12.0 & 0.186 & 0.330 & 0.304 & 0.734 & 0.757 & 0.354 & 0.558 & 0.363 & 0.020 & 0.126\\
+\cmidrule{1-13}
+ &  & 6.5 & 0.219 & 0.619 & 0.750 & 0.230 & 0.140 & 0.088 & 0.574 & 0.096 & 0.634 & 0.285\\
+\cmidrule{3-13}
+\multirow{-2}{*}{\centering\arraybackslash CD4+} & \multirow{-2}{*}{\centering\arraybackslash Any ENV PTEG} & 12.0 & 0.231 & 0.608 & 0.491 & 0.266 & 0.061 & 0.922 & 0.658 & 0.154 & 0.774 & 0.686\\
+\bottomrule
+\end{tabular} \end{document}
