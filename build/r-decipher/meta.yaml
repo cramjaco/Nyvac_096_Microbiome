@@ -8,12 +8,12 @@ source:
 
 requirements:
   build:
-    - r
+    - r=3.4.1
     - bioconductor-biostrings
     - r-rsqlite
 
   run:
-    - r
+    - r=3.4.1
     - bioconductor-biostrings
     - r-rsqlite
 test:
