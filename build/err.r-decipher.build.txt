@@ -1,17 +1,23 @@
 INFO:conda_build.variants:Adding in variants from internal_defaults
 INFO:conda_build.metadata:Attempting to finalize metadata for r-decipher
-Cloning into bare repository '/home/ohnoplus/anaconda3/conda-bld/git_cache/git.bioconductor.org/packages/DECIPHER'...
-Cloning into '/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431054091/work'...
+From https://git.bioconductor.org/packages/DECIPHER
+ * [new ref]                    -> _conda_cache_origin_head
+Cloning into '/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431692459/work'...
 done.
 fatal: No names found, cannot describe anything.
-* installing to library ‘/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431054091/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/lib/R/library’
+* installing to library ‘/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431692459/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/lib/R/library’
 * installing *source* package ‘DECIPHER’ ...
 ** libs
-/usr/bin/ld: cannot find -lgfortran
-collect2: error: ld returned 1 exit status
-make: *** [DECIPHER.so] Error 1
-ERROR: compilation failed for package ‘DECIPHER’
-* removing ‘/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431054091/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/lib/R/library/DECIPHER’
+installing to /home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431692459/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/lib/R/library/DECIPHER/libs
+** R
+** data
+** inst
+** byte-compile and prepare package for lazy loading
+Error: package or namespace load failed for ‘IRanges’:
+ Functions found when exporting methods from the namespace ‘IRanges’ which are not S4 generic: ‘endoapply’, ‘mendoapply’
+Error : package ‘IRanges’ could not be loaded
+ERROR: lazy loading failed for package ‘DECIPHER’
+* removing ‘/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431692459/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/lib/R/library/DECIPHER’
 Traceback (most recent call last):
   File "/home/ohnoplus/anaconda3/bin/conda-build", line 11, in <module>
     sys.exit(main())
@@ -29,4 +35,4 @@ Traceback (most recent call last):
     return _func_defaulting_env_to_os_environ('call', *popenargs, **kwargs)
   File "/home/ohnoplus/anaconda3/lib/python3.6/site-packages/conda_build/utils.py", line 280, in _func_defaulting_env_to_os_environ
     raise subprocess.CalledProcessError(proc.returncode, _args)
-subprocess.CalledProcessError: Command '['/bin/bash', '-e', '/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431054091/work/conda_build.sh']' returned non-zero exit status 1.
+subprocess.CalledProcessError: Command '['/bin/bash', '-e', '/home/ohnoplus/anaconda3/conda-bld/r-decipher_1526431692459/work/conda_build.sh']' returned non-zero exit status 1.
