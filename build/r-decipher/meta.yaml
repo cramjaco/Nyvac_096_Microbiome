@@ -11,11 +11,13 @@ requirements:
     - r
     - bioconductor-biostrings
     - r-rsqlite
+    - bioconductor-iranges
 
   run:
     - r
     - bioconductor-biostrings
     - r-rsqlite
+    - bioconductor-iranges
 test:
 test:
   commands:
