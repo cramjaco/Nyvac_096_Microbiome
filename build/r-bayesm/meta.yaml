@@ -8,14 +8,18 @@ package:
   version: {{ version|replace("-", "_") }}
 
 source:
-  fn: bayesm_3.1-0.1.tar.gz
+  fn: bayesm_{{ version }}.tar.gz
   url:
-    - {{ cran_mirror }}/src/contrib/bayesm_3.1-0.1.tar.gz
-    - {{ cran_mirror }}/src/contrib/Archive/bayesm/bayesm_3.1-0.1.tar.gz
+    - https://cran.r-project.org/src/contrib/bayesm_{{ version }}.tar.gz
+    - https://cran.r-project.org/src/contrib/Archive/bayesm/bayesm_{{ version }}.tar.gz
+
+
   sha256: 5879823b7fb6e6df0c0fe98faabc1044a4149bb65989062df4ade64e19d26411
+  # patches:
+   # List any patch files here
+   # - fix.patch
 
 build:
-  merge_build_host: True  # [win]
   # If this is a new build for the same version, increment the build number.
   number: 0
 
@@ -27,27 +31,22 @@ build:
 # Suggests: knitr, rmarkdown
 requirements:
   build:
-    - {{ compiler('c') }}          # [not win]
-    - {{ compiler('cxx') }}        # [not win]
-    - {{native}}toolchain          # [win]
-    - {{posix}}filesystem          # [win]
-    - {{posix}}make
-
-  host:
     - r-base
     - r-rcpp >=0.12.0
     - r-rcpparmadillo
+    - posix                # [win]
+    - {{native}}toolchain  # [win]
+    - gcc                  # [not win]
 
   run:
     - r-base
-    - {{native}}gcc-libs           # [win]
     - r-rcpp >=0.12.0
-    - r-rcpparmadillo
+    - r-rcpparmadillo{indent}libgcc  # [not win]
 
 test:
   commands:
     # You can put additional test commands to be run here.
-    - $R -e "library('bayesm')"           # [not win]
+    - $R -e "library('bayesm')"  # [not win]
     - "\"%R%\" -e \"library('bayesm')\""  # [win]
 
   # You can also put a file called run_test.py, run_test.sh, or run_test.bat
@@ -57,25 +56,10 @@ test:
     # Put any additional test requirements here.
 
 about:
-  home: http://www.perossi.org/home/bsm-1
+  home: http
   license: GPL (>= 2)
-  summary: 'Covers many important models used in marketing and micro-econometrics applications.  The
-    package includes: Bayes Regression (univariate or multivariate dep var), Bayes Seemingly
-    Unrelated Regression (SUR), Binary and Ordinal Probit, Multinomial Logit (MNL) and
-    Multinomial Probit (MNP), Multivariate Probit, Negative Binomial (Poisson) Regression,
-    Multivariate Mixtures of Normals (including clustering), Dirichlet Process Prior
-    Density Estimation with normal base, Hierarchical Linear Models with normal prior
-    and covariates, Hierarchical Linear Models with a mixture of normals prior and covariates,
-    Hierarchical Multinomial Logits with a mixture of normals prior and covariates,
-    Hierarchical Multinomial Logits with a Dirichlet Process prior and covariates, Hierarchical
-    Negative Binomial Regression Models, Bayesian analysis of choice-based conjoint
-    data, Bayesian treatment of linear instrumental variables models, Analysis of Multivariate
-    Ordinal survey data with scale usage heterogeneity (as in Rossi et al, JASA (01)),
-    Bayesian Analysis of Aggregate Random Coefficient Logit Models as in BLP (see Jiang,
-    Manchanda, Rossi 2009) For further reference, consult our book, Bayesian Statistics
-    and Marketing by Rossi, Allenby and McCulloch (Wiley 2005) and Bayesian Non- and
-    Semi-Parametric Methods and Applications (Princeton U Press 2014).'
-
+  summary: Covers many important models used in marketing and micro-econometrics applications.  The
+    package includes
   license_family: GPL3
 
 # The original CRAN metadata for this package was:

@@ -8,14 +8,18 @@ package:
   version: {{ version|replace("-", "_") }}
 
 source:
-  fn: compositions_1.40-1.tar.gz
+  fn: compositions_{{ version }}.tar.gz
   url:
-    - {{ cran_mirror }}/src/contrib/compositions_1.40-1.tar.gz
-    - {{ cran_mirror }}/src/contrib/Archive/compositions/compositions_1.40-1.tar.gz
+    - https://cran.r-project.org/src/contrib/compositions_{{ version }}.tar.gz
+    - https://cran.r-project.org/src/contrib/Archive/compositions/compositions_{{ version }}.tar.gz
+
+
   sha256: 0bc1e16b47fd87be7f8896dcfc3ae8640b028270494e23dbc0812d835e1ac1c2
+  # patches:
+   # List any patch files here
+   # - fix.patch
 
 build:
-  merge_build_host: True  # [win]
   # If this is a new build for the same version, increment the build number.
   number: 0
 
@@ -27,30 +31,26 @@ build:
 # Suggests: rgl
 requirements:
   build:
-    - {{ compiler('c') }}          # [not win]
-    - {{native}}toolchain          # [win]
-    - {{posix}}filesystem          # [win]
-    - {{posix}}make
-
-  host:
     - r-base
     - r-bayesm
     - r-energy
     - r-robustbase
     - r-tensora
+    - posix                # [win]
+    - {{native}}toolchain  # [win]
+    - gcc                  # [not win]
 
   run:
     - r-base
-    - {{native}}gcc-libs           # [win]
     - r-bayesm
     - r-energy
     - r-robustbase
-    - r-tensora
+    - r-tensora{indent}libgcc  # [not win]
 
 test:
   commands:
     # You can put additional test commands to be run here.
-    - $R -e "library('compositions')"           # [not win]
+    - $R -e "library('compositions')"  # [not win]
     - "\"%R%\" -e \"library('compositions')\""  # [win]
 
   # You can also put a file called run_test.py, run_test.sh, or run_test.bat
@@ -60,7 +60,7 @@ test:
     # Put any additional test requirements here.
 
 about:
-  home: http://www.stat.boogaart.de/compositions
+  home: http
   license: GPL (>= 2)
   summary: The package provides functions for the consistent analysis of compositional data (e.g.
     portions of substances) and positive numbers (e.g. concentrations) in the way proposed
