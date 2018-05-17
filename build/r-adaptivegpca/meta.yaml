@@ -1,0 +1,94 @@
+{% set version = '0.1.2' %}
+
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-adaptivegpca
+  version: {{ version|replace("-", "_") }}
+
+source:
+  fn: adaptiveGPCA_0.1.2.tar.gz
+  url:
+    - {{ cran_mirror }}/src/contrib/adaptiveGPCA_0.1.2.tar.gz
+    - {{ cran_mirror }}/src/contrib/Archive/adaptiveGPCA/adaptiveGPCA_0.1.2.tar.gz
+    - https://cran.r-project.org/src/contrib/adaptiveGPCA_0.1.2.tar.gz
+    - https://cran.r-project.org/src/contrib/Archive/adaptiveGPCA/adaptiveGPCA_0.1.2.tar.gz
+    - 
+  sha256: bfd8442d949e6c4670a53d524f6f58923f91d2a55ff92ec23246b9760e87662d
+
+build:
+  merge_build_host: True  # [win]
+  # If this is a new build for the same version, increment the build number.
+  number: 0
+
+  # This is required to make R link correctly on Linux.
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+# Suggests: knitr, rmarkdown
+requirements:
+  build:
+
+  host:
+    - r-base
+    - r-ape >=3.1.4
+    - r-ggplot2 >=1.0.0
+    - bioconductor-phyloseq >=1.14.0
+    - r-shiny >=1.0.0
+
+  run:
+    - r-base
+    - r-ape >=3.1.4
+    - r-ggplot2 >=1.0.0
+    - bioconductor-phyloseq >=1.14.0
+    - r-shiny >=1.0.0
+
+test:
+  commands:
+    # You can put additional test commands to be run here.
+    - $R -e "library('adaptiveGPCA')"           # [not win]
+    - "\"%R%\" -e \"library('adaptiveGPCA')\""  # [win]
+
+  # You can also put a file called run_test.py, run_test.sh, or run_test.bat
+  # in the recipe that will be run at test time.
+
+  # requires:
+    # Put any additional test requirements here.
+
+about:
+  home: https://CRAN.R-project.org/package=adaptiveGPCA
+  license: AGPL-3
+  summary: 'Implements adaptive gPCA, as described in: Fukuyama, J. (2017) <arXiv:1702.00501>.
+    The package also includes functionality for applying the method to ''phyloseq''
+    objects so that the method can be easily applied to microbiome data and a ''shiny''
+    app for interactive visualization. '
+
+  license_family: AGPL
+
+# The original CRAN metadata for this package was:
+
+# Package: adaptiveGPCA
+# Title: Adaptive Generalized PCA
+# Version: 0.1.2
+# Authors@R: person("Julia", "Fukuyama", email = "julia.fukuyama@gmail.com", role = c("aut", "cre"))
+# Description: Implements adaptive gPCA, as described in: Fukuyama, J. (2017) <arXiv:1702.00501>. The package also includes functionality for applying the method to 'phyloseq' objects so that the method can be easily applied to microbiome data and a 'shiny' app for interactive visualization.
+# Depends: R (>= 3.1.0)
+# License: AGPL-3
+# LazyData: true
+# VignetteBuilder: knitr
+# Suggests: knitr, rmarkdown
+# Imports: ape (>= 3.1.4), ggplot2 (>= 1.0.0), shiny (>= 1.0.0), phyloseq (>= 1.14.0)
+# biocViews:
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2018-03-14 16:57:51 UTC; juliefukuyama
+# Author: Julia Fukuyama [aut, cre]
+# Maintainer: Julia Fukuyama <julia.fukuyama@gmail.com>
+# Repository: CRAN
+# Date/Publication: 2018-03-14 22:27:48 UTC
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
