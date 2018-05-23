@@ -1,0 +1,99 @@
+{% set version = '0.0.3' %}
+
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-treeda
+  version: {{ version|replace("-", "_") }}
+
+source:
+  fn: treeDA_0.0.3.tar.gz
+  url:
+    - {{ cran_mirror }}/src/contrib/treeDA_0.0.3.tar.gz
+    - {{ cran_mirror }}/src/contrib/Archive/treeDA/treeDA_0.0.3.tar.gz
+    - https://cran.r-project.org/src/contrib/treeDA_0.0.3.tar.gz
+    - https://cran.r-project.org/src/contrib/Archive/treeDA/treeDA_0.0.3.tar.gz
+  sha256: 491e61af5e74769b85242f090620e9251f89a5e50c225e67d3e220e5652a29d5
+
+build:
+  merge_build_host: True  # [win]
+  # If this is a new build for the same version, increment the build number.
+  number: 0
+
+  # This is required to make R link correctly on Linux.
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+# Suggests: adaptiveGPCA (>= 0.1), knitr (>= 1.16), testthat (>= 2.0.0)
+requirements:
+  build:
+
+  host:
+    - r-base
+    - r-matrix >=1.2.10
+    - r-ggplot2 >=2.2.1
+    - r-gtable >=0.2.0
+    - r-mvtnorm >=1.0.6
+    - bioconductor-phyloseq # >=1.22.3
+    - r-reshape2 >=1.4.2
+    - r-sparselda >=0.1.9
+
+  run:
+    - r-base
+    - r-matrix >=1.2.10
+    - r-ggplot2 >=2.2.1
+    - r-gtable >=0.2.0
+    - r-mvtnorm >=1.0.6
+    - bioconductor-phyloseq # >=1.22.3
+    - r-reshape2 >=1.4.2
+    - r-sparselda >=0.1.9
+
+test:
+  commands:
+    # You can put additional test commands to be run here.
+    - $R -e "library('treeDA')"           # [not win]
+    - "\"%R%\" -e \"library('treeDA')\""  # [win]
+
+  # You can also put a file called run_test.py, run_test.sh, or run_test.bat
+  # in the recipe that will be run at test time.
+
+  # requires:
+    # Put any additional test requirements here.
+
+about:
+  home: https://github.com/jfukuyama/treeda
+  license: GPL-2
+  summary: Performs sparse discriminant analysis on a combination of node and leaf predictors
+    when the predictor variables are structured according to a tree, as described in
+    Fukuyama et al. (2017) <doi:10.1371/journal.pcbi.1005706>.
+  license_family: GPL2
+
+# The original CRAN metadata for this package was:
+
+# Package: treeDA
+# Title: Tree-Based Discriminant Analysis
+# Version: 0.0.3
+# Authors@R: person("Julia", "Fukuyama", email = "julia.fukuyama@gmail.com", role = c("aut", "cre"))
+# Description: Performs sparse discriminant analysis on a combination of node and leaf predictors when the predictor variables are structured according to a tree, as described in Fukuyama et al. (2017) <doi:10.1371/journal.pcbi.1005706>.
+# Depends: R (>= 3.4.0)
+# Imports: sparseLDA (>= 0.1.9), Matrix (>= 1.2.10), mvtnorm (>= 1.0.6), reshape2 (>= 1.4.2), gtable (>= 0.2.0), phyloseq (>= 1.22.3), ggplot2 (>= 2.2.1), grid, stats
+# Suggests: adaptiveGPCA (>= 0.1), knitr (>= 1.16), testthat (>= 2.0.0)
+# VignetteBuilder: knitr
+# License: GPL-2
+# biocViews:
+# URL: https://github.com/jfukuyama/treeda
+# Encoding: UTF-8
+# LazyData: true
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2018-03-14 21:47:11 UTC; juliefukuyama
+# Author: Julia Fukuyama [aut, cre]
+# Maintainer: Julia Fukuyama <julia.fukuyama@gmail.com>
+# Repository: CRAN
+# Date/Publication: 2018-03-14 23:31:49 UTC
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
