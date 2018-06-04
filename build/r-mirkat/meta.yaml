@@ -1,0 +1,94 @@
+{% set version = '1.0.1' %}
+
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-mirkat
+  version: {{ version|replace("-", "_") }}
+
+source:
+  fn: MiRKAT_1.0.1.tar.gz
+  url:
+    - {{ cran_mirror }}/src/contrib/MiRKAT_1.0.1.tar.gz
+    - {{ cran_mirror }}/src/contrib/Archive/MiRKAT/MiRKAT_1.0.1.tar.gz
+  sha256: bdb89ec9782b1ff6d8cd11b8d6130be96dfb7d3ea193a50b511d55a97df2b0a9
+
+build:
+  merge_build_host: True  # [win]
+  # If this is a new build for the same version, increment the build number.
+  number: 0
+
+  # This is required to make R link correctly on Linux.
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - {{ compiler('c') }}          # [not win]
+    - {{ compiler('cxx') }}        # [not win]
+    - {{native}}toolchain          # [win]
+    - {{posix}}filesystem          # [win]
+    - {{posix}}make
+
+  host:
+    - r-base
+    - r-gunifrac
+    - r-mass
+    - r-pearsonds
+    - r-survival
+
+  run:
+    - r-base
+    - {{native}}gcc-libs           # [win]
+    - r-gunifrac
+    - r-mass
+    - r-pearsonds
+    - r-survival
+
+test:
+  commands:
+    # You can put additional test commands to be run here.
+    - $R -e "library('MiRKAT')"           # [not win]
+    - "\"%R%\" -e \"library('MiRKAT')\""  # [win]
+
+  # You can also put a file called run_test.py, run_test.sh, or run_test.bat
+  # in the recipe that will be run at test time.
+
+  # requires:
+    # Put any additional test requirements here.
+
+about:
+  home: https://CRAN.R-project.org/package=MiRKAT
+  license: GPL (>= 2)
+  summary: Test for overall association between microbiome composition data with a continuous
+    or dichotomous outcome via phylogenetic kernels. The phenotype can be univariate
+    continuous or binary phenotypes (Zhao et al. (2015) <doi:10.1016/j.ajhg.2015.04.003>),
+    survival outcomes (Plantinga et al. (2017) <doi:10.1186/s40168-017-0239-9>), multivariate
+    (Zhan et al. (2017) <doi:10.1002/gepi.22030>) and structured phenotypes (Zhan et
+    al. (2017) <doi:10.1111/biom.12684>). For all these effect, the microbiome community
+    effect was modeled nonparametrically through a kernel function, which can incorporate
+    the phylogenetic tree information.
+  license_family: GPL3
+
+# The original CRAN metadata for this package was:
+
+# Package: MiRKAT
+# Version: 1.0.1
+# Date: 2018-04-25
+# Title: Microbiome Regression-Based Kernel Association Test
+# Authors@R: c(person("Haotian", "Zheng", role = c("aut"), email = "ht-zh14@mails.tsinghua.edu.cn"), person("Xiang", "Zhan", role = "aut"), person("Anna", "Plantinga", role = "aut"), person("Michael", "Wu", role = "aut"), person("Ni", "Zhao", role = c("aut", "cre"), email = "nzhao10@jhu.edu"), person("Jun", "Chen", role = "aut"))
+# Author: Haotian Zheng [aut], Xiang Zhan [aut], Anna Plantinga [aut], Michael Wu [aut], Ni Zhao [aut, cre], Jun Chen [aut]
+# Maintainer: Ni Zhao <nzhao10@jhu.edu>
+# Depends: R (>= 2.13.0), survival, PearsonDS, GUniFrac, MASS
+# Description: Test for overall association between microbiome composition data with a continuous or dichotomous outcome via phylogenetic kernels. The phenotype can be univariate continuous or binary phenotypes (Zhao et al. (2015) <doi:10.1016/j.ajhg.2015.04.003>), survival outcomes (Plantinga et al. (2017) <doi:10.1186/s40168-017-0239-9>), multivariate (Zhan et al. (2017) <doi:10.1002/gepi.22030>) and structured phenotypes (Zhan et al. (2017) <doi:10.1111/biom.12684>). For all these effect, the microbiome community effect was modeled nonparametrically through a kernel function, which can incorporate the phylogenetic tree information.
+# License: GPL (>= 2)
+# NeedsCompilation: yes
+# Packaged: 2018-04-25 16:55:45 UTC; dell
+# Repository: CRAN
+# Date/Publication: 2018-04-25 19:44:09 UTC
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
