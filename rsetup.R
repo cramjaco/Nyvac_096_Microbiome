@@ -1,0 +1,46 @@
+options(repos = c(
+    CRAN = "http://mran.revolutionanalytics.com/snapshot/2017-10-31/"))
+source('http://bioconductor.org/biocLite.R')
+install.packages("packrat")
+library(packrat)
+packrat::init(".")
+
+### from setup.r
+
+cranPackages = c(
+# to connect to jupyter
+"repr",
+"IRdisplay",
+"evaluate",
+"crayon",
+"pbdZMQ",
+"devtools",
+"uuid",
+"digest",
+
+# for actual work
+"tidyverse",
+"gridExtra",
+"vegan",
+"imputeMissings",
+"compositions",
+"tidyverse",
+"broom",
+"knitr",
+"kableExtra",
+"IRdisplay",
+"MiRKAT",
+"purrrlyr")
+
+new.packages <- cranPackages[!(cranPackages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# bioconductor packages
+
+bioconductorPackages <- c(
+"phyloseq",
+"dada2",
+"qvalue")
+
+new.packages.b <- bioconductorPackages[!(bioconductorPackages %in% installed.packages()[,"Package"])]
+if(length(new.packages.b)) biocLite(new.packages.b)
