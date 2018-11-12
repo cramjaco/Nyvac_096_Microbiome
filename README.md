@@ -41,13 +41,16 @@ Some dependencies that were required on my system
 `t1-xfree86-nonfree ttf-xfree86-nonfree ttf-xfree86-nonfree-syriac xfonts-75dpi xfonts-100dpi`
 `libcairo2-dev`
 
-To bring packages back, I would advise installing packrat from within R
-`install.packages('packrat`)
+To bring packages back, I would advise installing packrat from within R.
+This seems to run automatically if one runs R from inside the main directory.
+If not, try:
+`install.packages('packrat')`
 and then restoring from snapshot
 `packrat::restore()`
  
 *Note* - I had been trying to use `condas` to install R packages, but didn not have success 
-Activate `irkernel` in R to connect it to jupyter notebook.
+Activate *irkernel* from within R to connect it to jupyter notebook.
+`IRkernel::installspec()`
 
 # How to run analyses
 ## Upstream analysis
