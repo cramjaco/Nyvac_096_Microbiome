@@ -50,7 +50,10 @@ and then restoring from snapshot
  
 *Note* - I had been trying to use `condas` to install R packages, but didn not have success 
 Activate *irkernel* from within R to connect it to jupyter notebook.
-`IRkernel::installspec()`
+
+```
+IRkernel::installspec()
+```
 
 # How to run analyses
 ## Upstream analysis
