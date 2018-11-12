@@ -36,6 +36,11 @@ Must contain jupyter notebook.
 ###jupyter notebook or jupyter lab running in conda
  
 ### I have been using the r package `packrat` to keep track of packages.
+Some dependencies that were required on my system 
+`libssl-dev libxml2-dev`
+`t1-xfree86-nonfree ttf-xfree86-nonfree ttf-xfree86-nonfree-syriac xfonts-75dpi xfonts-100dpi`
+`libcairo2-dev`
+
 To bring packages back, I would advise installing packrat from within R
 `install.packages('packrat`)
 and then restoring from snapshot
