@@ -10,24 +10,39 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 
 
 # Dependencies:
+
+## R version 3.4.1. 
+Notes on R
+I have not had success with all of the subsequent dependencies when using `condas` to install R.
+https://unix.stackexchange.com/questions/149451/install-r-in-my-own-directory
+When I tested these scripts I built R 3.4.1 from source on a clean virtual box containing Ubuntu 18.04. 
+
+The following packages were required (I installed with apt) for my R build.
+`build-essential fort77 xorg-dev liblzma-dev  libblas-dev gfortran gcc-multilib gobjc++ libreadline-dev libbz2-dev libcurl4-openssl-dev texlive-fonts-extra texinfo default-jdk`
+And of course, add R to path.
+
+## Anacondas
+Must contain jupyter notebook.
+
 ## For upstream analysis.
- * A running version of Anacondas.
  * To run the demultiplexing, you will need to install qiime1. I recommend using anacondas to set up the following environment
  
 ` conda create -n qiime1 numpy=1.10 python=2.7 qiime matplotlib=1.4.3 mock nose -c bioconda`
 
- * To run everything else (both upstream and downstream), you will need a bunch of R packages, which you can download and install with a custom condas environment.
- 
- `conda create env cramjaco/nyvac-lab-2`
-     
-     * This environment includes, among other things, R version 3.4.1, DADA2, phangorn, phyloseq, and other packages needed to complete the analysis.
+
      
 
 ## For downstream analyis:
- * jupyter notebook or jupyter lab running in conda
-     * allow jupyter lab/notebook to point at the nyvac-lab-2 environment with 
-     `conda install nb_conda`
-     * Target the nyvac-lab-2 environment from the Kernel>Change Kernel menu option
+###jupyter notebook or jupyter lab running in conda
+ 
+### I have been using the r package `packrat` to keep track of packages.
+To bring packages back, I would advise installing packrat from within R
+`install.packages('packrat`)
+and then restoring from snapshot
+`packrat::restore()`
+ 
+*Note* - I had been trying to use `condas` to install R packages, but didn not have success 
+Activate `irkernel` in R to connect it to jupyter notebook.
 
 # How to run analyses
 ## Upstream analysis
