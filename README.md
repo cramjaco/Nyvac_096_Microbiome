@@ -41,14 +41,36 @@ Must contain jupyter notebook.
 you should run `unset BROWSER`
  
 ### I have been using the r package `packrat` to keep track of packages.
-Some dependencies that were required on my system 
+Some dependencies that were required on my system -- I have root access and so used `sudo apt install`. If you are doing this on a cluster, you may need to install many of these locally or get your system administrator to do it for you.
+
 `libssl-dev libxml2-dev`
 `t1-xfree86-nonfree ttf-xfree86-nonfree ttf-xfree86-nonfree-syriac xfonts-75dpi xfonts-100dpi`
 `libcairo2-dev`
 
-To bring packages back, I would advise installing packrat from within R.
-This seems to run automatically if one runs R from inside the main directory.
-If not, try:
+To make the igraph r package able to run, you need to modify your anacondas directory slightly, as per this github issue
+https://github.com/igraph/rigraph/issues/275#issuecomment-397957431
+
+To do this, navigate in the terminal to your anaconda directory. In my case this is done with
+
+`cd ~/anaconda3`
+
+and then deactivate all local copies of libgfortran.so.4.0.0
+
+```
+find . -name "libgfortran.so.4.0.0" -execdir mv {} {}_off ';'
+```
+
+Now you are ready to install r packages. I've set up pacrat to do this for you. In theory, all you have to do is navigate to the project directory
+
+```
+cd ~/Nyvac_096_Microbiome
+```
+
+And then run `R` from the terminal.
+
+The packrat library should bootstrap itself and then install all of the necessary R packages. 
+
+If that doesn't happen, try running
 `install.packages('packrat')`
 and then restoring from snapshot
 `packrat::restore()`
