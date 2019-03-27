@@ -508,6 +508,12 @@ Source: CRAN
 Version: 1.0.1
 Hash: c5a7e0ce07509a8561881c8860270d71
 
+Package: gdtools
+Source: CRAN
+Version: 0.1.7
+Hash: 1cce66a628a2682507cdcf6f1b4c9826
+Requires: Rcpp, withr
+
 Package: ggplot2
 Source: CRAN
 Version: 3.1.0
@@ -1035,6 +1041,12 @@ Source: CRAN
 Version: 2.43-1
 Hash: 65efd41b0fb013ae71ba36dcf85ba9b0
 Requires: Matrix
+
+Package: svglite
+Source: CRAN
+Version: 1.2.1
+Hash: 715acb2d1ab1e4af000eb0843e048a91
+Requires: BH, Rcpp, gdtools
 
 Package: tensorA
 Source: CRAN
