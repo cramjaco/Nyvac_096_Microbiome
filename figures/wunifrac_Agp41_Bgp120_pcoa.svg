@@ -98,7 +98,7 @@
 <circle cx='215.97' cy='147.36' r='6.04pt' style='stroke-width: 1.42; fill: #440154;' clip-path='url(#cpMHw1NzZ8Mjg4fDA=)' />
 <g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='230.09' y='133.11' style='font-size: 8.80px; font-family: Arimo;' textLength='18.10px' lengthAdjust='spacingAndGlyphs'>High</text></g>
 <g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='230.09' y='150.39' style='font-size: 8.80px; font-family: Arimo;' textLength='16.14px' lengthAdjust='spacingAndGlyphs'>Low</text></g>
-<g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='5.06' y='14.45' style='font-size: 14.00px; font-weight: bold; font-family: Arimo;' textLength='10.11px' lengthAdjust='spacingAndGlyphs'>A</text></g>
+<g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='8.67' y='24.77' style='font-size: 24.00px; font-weight: bold; font-family: Arimo;' textLength='17.33px' lengthAdjust='spacingAndGlyphs'>A</text></g>
 <defs>
   <clipPath id='cpMjg4fDU3NnwyNDAuNTEzfDQ3LjQ4NzQ='>
     <rect x='288.00' y='47.49' width='288.00' height='193.03' />
@@ -198,5 +198,5 @@
 <line x1='521.39' y1='145.49' x2='524.85' y2='145.49' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' clip-path='url(#cpMHw1NzZ8Mjg4fDA=)' />
 <line x1='521.39' y1='130.63' x2='524.85' y2='130.63' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' clip-path='url(#cpMHw1NzZ8Mjg4fDA=)' />
 <line x1='521.39' y1='109.61' x2='524.85' y2='109.61' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' clip-path='url(#cpMHw1NzZ8Mjg4fDA=)' />
-<g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='293.06' y='14.45' style='font-size: 14.00px; font-weight: bold; font-family: Arimo;' textLength='10.11px' lengthAdjust='spacingAndGlyphs'>B</text></g>
+<g clip-path='url(#cpMHw1NzZ8Mjg4fDA=)'><text x='296.67' y='24.77' style='font-size: 24.00px; font-weight: bold; font-family: Arimo;' textLength='17.33px' lengthAdjust='spacingAndGlyphs'>B</text></g>
 </svg>
