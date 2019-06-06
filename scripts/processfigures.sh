@@ -2,7 +2,7 @@
 # modified from from https://gist.github.com/matsen/4263955
 cd ../figures
 # figure 1
-inkscape --without-gui --export-png="useiggs.png" -- export-dpi 300 useiggs.svg
+inkscape --without-gui --export-png="useiggs.png" --export-dpi 900 useiggs.svg
 convert -compress LZW -alpha remove useiggs.png useiggs.tiff
 mogrify -alpha off useiggs.tiff
 mv useiggs.tiff numbered/figure1.tiff
