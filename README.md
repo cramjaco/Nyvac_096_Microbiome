@@ -13,7 +13,7 @@ In order to use the breakaway package by adw36, which I need to calculate richne
 
 # Dependencies:
 
-## R version 3.4.1. 
+## R version 3.6.1. 
 Notes on R
 I have not had success with all of the subsequent dependencies when using `condas` to install R.
 https://unix.stackexchange.com/questions/149451/install-r-in-my-own-directory
