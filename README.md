@@ -10,6 +10,8 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 
 In order to use the breakaway package by adw36, which I need to calculate richness (and confedence intervals, and to run appropriate statistics), I need an R version > 3.5. This branch is for the newist version 3.6.1. 
 
+Currently, with the new R version, we are bugs central, especially with the modified tip glom methods.
+
 
 # Dependencies:
 
@@ -95,6 +97,13 @@ If that doesn't happen, try running
 `install.packages('packrat')`
 and then restoring from snapshot
 `packrat::restore()`
+
+There are some packages that I don't call with library, rather I just address functions in them by specifying the package name eg `rsample::bootstraps()`. These need to be installed manually. Or maybe packrat will start tracking them. You may need to run the following:
+
+```
+install.packages(c('rsample'))
+```
+I'm still looking for these
  
 *Note* - I had been trying to use `condas` to install R packages, but didn not have success 
 Activate *irkernel* from within R to connect it to jupyter notebook.
