@@ -125,14 +125,22 @@ tip_glom_saveid <- function(physeq, hcfun = agnes, h = NULL, k = NULL, ...){
                                                             i])
     }
 
-    glomReps <- physeq %>% tax_table %>% as.data.frame %>% rownames
+    ## the following crashes in r 6.1, rewrite as per https://github.com/joey711/phyloseq/issues/983 21 Aug 2019
+    #glomReps <- physeq %>% tax_table %>% as.data.frame %>% rownames
+    glomReps <- rownames(as.data.frame(physeq@tax_table@.Data))
+    
     
     ## order that the old groups should go in in the new object
     sapply(glomReps, function(y){
         (which(sapply(grps, function(x){y %in% x})))             
     }) -> grpOrder
     
-    physeq %>% tax_table %>% data.frame(oldGroups = oldGroups[grpOrder]) %>% as.matrix %>% tax_table -> gtt
+    ## rewrite 21 Aug 2019
+    #physeq %>% tax_table %>% data.frame(oldGroups = oldGroups[grpOrder]) %>% as.matrix %>% tax_table -> gtt
+    gtt0 <- as.data.frame(physeq@tax_table@.Data)
+    gtt0$oldGroups = oldGroups[grpOrder]
+    gtt <- tax_table(as_matrix(gtt0))
+    
     physeq@tax_table <- gtt
     
     physeq

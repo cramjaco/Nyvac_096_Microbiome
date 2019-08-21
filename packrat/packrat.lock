@@ -1,6 +1,6 @@
 PackratFormat: 1.4
 PackratVersion: 0.4.8.1
-RVersion: 3.4.1
+RVersion: 3.6.0
 Repos: BioCsoft=https://bioconductor.org/packages/3.6/bioc,
     BioCann=https://bioconductor.org/packages/3.6/data/annotation,
     BioCexp=https://bioconductor.org/packages/3.6/data/experiment,
@@ -343,7 +343,13 @@ Package: chemometrics
 Source: CRAN
 Version: 1.4.2
 Hash: 9d8c6de74cd7b832ec4ef9b22fda0dba
-Requires: MASS, e1071, lars, mclust, nnet, pcaPP, pls, robustbase, som
+Requires: MASS, class, e1071, lars, mclust, nnet, pcaPP, pls,
+    robustbase, rpart, som
+
+Package: class
+Source: CRAN
+Version: 7.3-15
+Requires: MASS
 
 Package: cli
 Source: CRAN
@@ -447,6 +453,7 @@ Package: e1071
 Source: CRAN
 Version: 1.7-0
 Hash: 54c6b974d385e3c0961eb4cefc9ea0c5
+Requires: class
 
 Package: energy
 Source: CRAN
@@ -497,6 +504,12 @@ Version: 1.2.6
 Hash: 88d3a977a2fca91cc44c36f8717bc481
 Requires: Rcpp
 
+Package: furrr
+Source: CRAN
+Version: 0.1.0
+Hash: 2bf07dd5ce0ab262a081cc9f0555b670
+Requires: future, globals, purrr, rlang
+
 Package: futile.logger
 Source: CRAN
 Version: 1.4.3
@@ -508,11 +521,22 @@ Source: CRAN
 Version: 1.0.1
 Hash: c5a7e0ce07509a8561881c8860270d71
 
+Package: future
+Source: CRAN
+Version: 1.14.0
+Hash: be5e13b4f7a76297c720059f04845aeb
+Requires: digest, globals, listenv
+
 Package: gdtools
 Source: CRAN
 Version: 0.1.7
 Hash: 1cce66a628a2682507cdcf6f1b4c9826
 Requires: Rcpp, withr
+
+Package: generics
+Source: CRAN
+Version: 0.0.2
+Hash: 0a2498d0288de2a2dabf31438562c2b1
 
 Package: ggplot2
 Source: CRAN
@@ -531,6 +555,12 @@ Package: git2r
 Source: CRAN
 Version: 0.23.0
 Hash: f7190a7a4b5c5f0983b4b6ee29ed7bc3
+
+Package: globals
+Source: CRAN
+Version: 0.12.4
+Hash: 813a6280042ee82fa529833489333322
+Requires: codetools
 
 Package: glue
 Source: CRAN
@@ -653,6 +683,11 @@ Package: lazyeval
 Source: CRAN
 Version: 0.2.1
 Hash: 88926ad9c43581fd0822a37c8ed09f05
+
+Package: listenv
+Source: CRAN
+Version: 0.7.0
+Hash: f5e0d09f4e42d749ae0f893cff1817b6
 
 Package: lme4
 Source: CRAN
@@ -958,8 +993,8 @@ Requires: curl, data.table, foreign, haven, openxlsx, readxl, tibble
 
 Package: rlang
 Source: CRAN
-Version: 0.3.0.1
-Hash: 35fb7a51d5d756c56f793ed9c381fb84
+Version: 0.4.0
+Hash: eabda67321fe1d477ea641ddd5d84f00
 
 Package: rmarkdown
 Source: CRAN
@@ -974,11 +1009,22 @@ Version: 0.93-3
 Hash: b5e58297f611d55bca17c7fce64d9675
 Requires: DEoptimR
 
+Package: rpart
+Source: CRAN
+Version: 4.1-15
+
 Package: rprojroot
 Source: CRAN
 Version: 1.3-2
 Hash: a25c3f70c166fb3fbabc410eb32b6366
 Requires: backports
+
+Package: rsample
+Source: CRAN
+Version: 0.0.5
+Hash: 4ec16ba35238357bdb53454bb4781a43
+Requires: dplyr, furrr, generics, purrr, rlang, tibble, tidyr,
+    tidyselect
 
 Package: rstudioapi
 Source: CRAN
