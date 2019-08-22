@@ -2091,7 +2091,7 @@ dplyr::select(Taxon, Intercept_estimate, clr_estimate, clr_std.error, clr_p.valu
 
      #Join taxonomy information
      left_join(
-     ps %>% tax_table %>% as.data.frame %>% as.tibble %>% dplyr::select(Kingdom:Genus, Species, tag) %>%
+     as.data.frame(ps@tax_table@.Data) %>% as.tibble %>% dplyr::select(Kingdom:Genus, Species, tag) %>%
          mutate(tag = as.character(tag)), # mutate so tag is and taxon are both character class
      by = c("Taxon" = "tag")) %>%
 pass
@@ -2618,8 +2618,9 @@ trub20 <- c('#e6194b','#3cb44b','#ffe119','#0082c8','#f58231','#911eb4','#46f0f0
 options(repr.plot.width=8, repr.plot.height= 4)
 ```
 
+Bookmark Here. Stuck for strange reasons.
 ```{r}
-ordered_pub_id_df <- psN2 %>% sample_data %>% dplyr::select(pub_id, rMDS1 = rMDS1.x.x, newname, MDS1 = MDS1.x.x) %>% arrange(rMDS1) %>% mutate(MDS1 = round(MDS1, 2), fig3tick = paste(pub_id, MDS1,sep = "_"))
+ordered_pub_id_df <- psN2 %>% sample_data %>% dplyr::select(pub_id, rMDS1, newname, MDS1) %>% arrange(rMDS1) %>% mutate(MDS1 = round(MDS1, 2), fig3tick = paste(pub_id, MDS1,sep = "_"))
 ordered_pub_id_df
 fig3tick <- ordered_pub_id_df %>% pull(fig3tick)
 ```
@@ -2699,9 +2700,16 @@ cowplot::save_plot('figures/stacked_bars.svg', sb, base_width = 14, base_height 
 # Exporting OTU tables and Taxa tables at each agglomeration level
 
 ```{r}
+# psDf %>%
+# mutate(OTU = map(ps, ~data.frame(otu_table(.)))) %>%
+# mutate(Tax = map(ps, ~data.frame(tax_table(.)))) %>%
+# mutate(OTUCount = map (psCount, ~data.frame(otu_table(.)))) %>%
+# pass -> psDf1
+```
+```{r}
 psDf %>%
 mutate(OTU = map(ps, ~data.frame(otu_table(.)))) %>%
-mutate(Tax = map(ps, ~data.frame(tax_table(.)))) %>%
+mutate(Tax = map(ps, ~as.data.frame(.@tax_table@.Data))) %>%
 mutate(OTUCount = map (psCount, ~data.frame(otu_table(.)))) %>%
 pass -> psDf1
 ```
