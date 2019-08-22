@@ -145,7 +145,7 @@ libver('kableExtra')
 
 ```{r}
 # Let those pretty tables actually show up in a jupyter notebook
-library('IRdisplay')
+#library('IRdisplay')
 ```
 
 ```{r}
@@ -628,11 +628,16 @@ scale_colour_manual(values = c("black", "red")) +
 scale_alpha_manual(values = c(.6, 1)) + 
 labs(y = "BAMA Response Magnitude")
 
-iggplot
+
 
 ggsave('figures/useiggsAllParticipants.svg')
 # To fix. Control groups don't show up in this version.
+
 ```
+```{r}
+iggplot
+```
+
 
 ```{r}
 iggplot <- immune.data %>%
@@ -778,10 +783,14 @@ kable("html", escape = F, digits = 3, align = 'c') %>%
 #kable_styling("striped", "hover", full_width = F) %>%
 #collapse_rows(columns = 1:2, latex_hline = "full") %>%
 pass-> sampleBreakdown.html
+```
 
-sampleBreakdown.html %>% 
-as.character() %>%
-display_html()
+```{r}
+sampleBreakdown.html
+```
+
+
+```{r}
 
 sampleBreakdown.html %>% cat(file = 'tables/sampleBreakdown.html')
 ```
@@ -1233,6 +1242,9 @@ mutate(
       ) %>%
 mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
 mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen)) -> toTable
+```
+
+```{r}
 
 toTable %>%
 
@@ -1241,9 +1253,7 @@ kable_styling("striped", "hover", full_width = F) %>%
 add_header_above(colNames1) %>%
 collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTable.html
 
-concisePermKernTable.html %>% 
-as.character() %>%
-display_html()
+concisePermKernTable.html
 
 concisePermKernTable.html %>% cat(file = 'tables/concisePermkernTable.html')
 ```
@@ -1480,9 +1490,7 @@ kable_styling("striped", "hover", full_width = F) %>%
 add_header_above(colNames1) %>%
 collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTableGaus.html
 
-concisePermKernTableGaus.html %>% 
-as.character() %>%
-display_html()
+concisePermKernTableGaus.html
 
 concisePermKernTableGaus.html %>% cat(file = 'tables/concisePermkernTableGaus.html')
 ```
@@ -1697,8 +1705,12 @@ kable("html", escape = F, digits = 3, align = 'c') %>%
 collapse_rows(columns = 1:2, latex_hline = "full") %>%
 as.character() -> allMDS.html
 
-allMDS.html %>% 
-display_html()
+allMDS %>%
+kable("html", escape = F, digits = 3, align = 'c') %>%
+collapse_rows(columns = 1:2, latex_hline = "full")
+
+
+allMDS.html
 
 allMDS.html %>% cat(file = 'tables/allMDS.html')
 ```
