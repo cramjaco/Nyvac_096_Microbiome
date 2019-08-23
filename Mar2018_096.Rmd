@@ -199,7 +199,7 @@ source('libraries/library096.R')
 ```{r}
 # For permutation tests, how fast do things need to run
 # 9999 for most runs, 99999 for publication quality ones suggested
-jnperm <- 9999
+jnperm <- 99999
 ```
 
 ```{r}
