@@ -199,7 +199,7 @@ source('libraries/library096.R')
 ```{r}
 # For permutation tests, how fast do things need to run
 # 9999 for most runs, 99999 for publication quality ones suggested
-jnperm <- 99999
+jnperm <- 9999
 ```
 
 ```{r}
@@ -2780,5 +2780,15 @@ walk2(psDf1b$taxLevels, psDf1b$Tax,
 
 ```{r}
 save.image(file = "workspace.Rdata")
+```
+
+
+# Response to reviewers
+# Alpha diversity
+
+Add richness estemate to psN1. Jump that over to psN2
+
+```{r}
+# fc <- psN1 %>% otu_table%>% make_frequency_count_table()
 ```
 
