@@ -178,6 +178,11 @@ libver(purrrlyr)
 libver('qvalue')
 ```
 
+```{r}
+libver("breakaway")
+```
+
+
 ## Functions
 
 I have put the functions in a library file
@@ -2800,3 +2805,41 @@ bN1 <- breakaway(psN1)
 plot(bN1)
 ```
 What am I supposed to make of this? Basically the UB dwarfs the actual values and I can hardly see differences. Normal ggplot transformations don't seem to help too much.
+
+```{r}
+bN1
+```
+
+```{r}
+btN1 <- betta(summary(bN1)$estimate,
+              summary(bN1)$error,
+              make_design_matrix(psN1, "IgG_Con.6.gp120.B_Month_12")
+)
+
+btN1
+```
+
+```{r}
+gp41mtx <- cbind(1,
+  psN1 %>% sample_data %>% as.matrix %>% as.data.frame %>% pull(IgG_Con.6.gp120.B_Month_6.5) %>% as.character %>% as.numeric %>% medcode
+)
+names(gp41mtx) = c("(Intercept)", "predictors")
+```
+
+```{r}
+btNmonth6gp120 <- betta(summary(bN1)$estimate,
+              summary(bN1)$error,
+              gp41mtx
+)
+btNmonth6gp120
+```
+
+Does MDS1 associate with richness?
+```{r}
+btN_MDS <- betta(summary(bN1)$estimate,
+              summary(bN1)$error,
+              make_design_matrix(psN1, "MDS1")
+)
+btN_MDS
+```
+Not in any way that is statistically significant.
