@@ -1,6 +1,6 @@
 ---
 title: An R Markdown document converted from "Mar2018_096.ipynb"
-output: html_document
+output: html_notebook
 ---
 
 The goal of this Notebook is to take the parts of NovemberPhyloProc.ipynb that I expect to go into the actual manuscript.
@@ -2792,3 +2792,11 @@ Add richness estemate to psN1. Jump that over to psN2
 # fc <- psN1 %>% otu_table%>% make_frequency_count_table()
 ```
 
+```{r}
+bN1 <- breakaway(psN1)
+```
+
+```{r}
+plot(bN1)
+```
+What am I supposed to make of this? Basically the UB dwarfs the actual values and I can hardly see differences. Normal ggplot transformations don't seem to help too much.
