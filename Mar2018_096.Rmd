@@ -2843,3 +2843,37 @@ btN_MDS <- betta(summary(bN1)$estimate,
 btN_MDS
 ```
 Not in any way that is statistically significant.
+
+The reviewer actually asked whether unifrac distance associates with alpha diversity. I've done that with MDS1, but not distance per se.
+Lets do one kernel regression, where we ask whether unifrac distance associates with richness.
+
+```{r}
+richEsts <- bN1 %>% map_dbl("estimate")
+richEsts
+```
+```{r}
+richCI <- bN1 %>% map_df("interval") %>% t %>% as.data.frame() %>% rename(lb = V1, ub = V2) %>% merge(as.data.frame(richEsts), by = "row.names") %>% transform(row.names = Row.names, est = richEsts, Row.names = NULL, richEsts = NULL)
+# need to add mds1 to this, or just tack this all onto psN1rich
+richCI
+```
+
+
+```{r}
+psN1rich <- psN1
+sample_data(psN1rich) <- merge(psN1@sam_data, as.data.frame(richEsts), by = "row.names") %>%
+  transform(row.names = Row.names, Row.names = NULL, rich = RichEsts)
+```
+
+```{r}
+mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
+mirRich
+```
+Very similar to running betta against MDS1.
+
+Plot MDS1 vs richness (with confidence intervals)
+And plot mds1 and mds2 against richness
+
+```{r}
+do.call(rbind.data.frame, bN1)
+```
+
