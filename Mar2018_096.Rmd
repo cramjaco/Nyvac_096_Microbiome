@@ -2789,7 +2789,8 @@ save.image(file = "workspace.Rdata")
 
 
 # Response to reviewers
-# Alpha diversity
+## Ricness diversity
+The reviewer asks if it associates with MDS1. I'll check for associations with immunogenicity as well.
 
 Add richness estemate to psN1. Jump that over to psN2
 
@@ -2882,11 +2883,84 @@ psN1rich %>% sample_data %>% as.data.frame %>%
 
 
 ```{r}
-psN1rich %>% sample_data %>% as.data.frame %>%
+psN1richP <- psN1rich %>% sample_data %>% as.data.frame %>%
   ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb)) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP
+```
+
+
+
+```{r}
+psN1richMDSP<- psN1rich %>%
+sample_data() %>%
+ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = richEst), size = 5, stroke = 1, shape = 21) +
+coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
+viridis::scale_fill_viridis(name = 'richEst', direction = 1) +
+#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
+theme_bw()
+psN1richMDSP
+```
+
+Summary of alpha
+
+```{r}
+par <- options()
+options(repr.plot.width=6, repr.plot.height= 11)
+#g <- grid.arrange(wuford_gp41, wuford_gp120, ncol = 2)
+g <- cowplot::plot_grid(psN1richMDSP, psN1richP, ncol = 1, labels = c("A", "B"), label_size = 24)
+g
+
+#cowplot::save_plot('figures/wunifrac_Agp41_Bgp120_pcoa.png', g, base_width = 8, base_height = 4)
+```
+
+## Next question. Do the donor and non donor groups ever have different immune responses?
+This is in response to a reviewr comment.
+Strategy, write a function to, for one variable of interest, compare the groups, as I did for unifrac distance. I'll use a simple logistic regression here.
+Similar to CapVar. I want a use.immune data set that includes whether people are a donor as a column, but that 
+
+```{r}
+immune.data %>%
+mutate(isDonor = pub_id %in% muDoners) %>%
+filter(
+    (type == 'IgG' & 
+    antigen %in% ants1 &
+    month %in% c(6.5,12)
+    ) |
+    (type %in% c('IgG', 'IgA') &
+     antigen %in% ants2 &
+     month %in% c(0,6.5,12)
+    ) |
+    type == 'CD4+' &
+    antigen == 'ANY.ENV.PTEG' &
+    month %in% c(6.5, 12)
+      )-> allparticipants.immune
+head(allparticipants.immune)
 ```
 
 ```{r}
-psN1rich %>% sample_data %>% as.data.frame %>%
+allparticipants.test <- allparticipants.immune %>% filter(visitno ==9, antigen == "Con.6.gp120.B",type == "IgG")
+head(allparticipants.test)
+```
+
+```{r}
+donorTest <- function(x, transformation = medcode2, family = 'binomial'){
+  loc_glm <- glm(transformation(mag) ~  isDonor, data = x, family = family)
+  loc_glm %>% broom::tidy() %>% filter(term == 'isDonorTRUE') %>% dplyr::select(-term)
+}
+donorTest(allparticipants.test)
+```
+
+Do on everything
+```{r}
+allparticipants.immune %>%
+  filter(ct == T) %>%
+  group_by(type, antigen, visitno) %>%
+  do(data.frame(donorTest(.))) %>%
+  pass-> DonorEffectTable
+```
+Monkeys, I guess its debug aclock.
+
+```{r}
+DonorEffectTable
 ```
 
