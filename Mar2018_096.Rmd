@@ -2865,12 +2865,12 @@ immuneValpha <- function(x, ad = bN1, transformation = medcode2){
                summary(ad2)$error,
                gpXmtx
  )
-   out <- as.data.frame(thing$table[2, "p-values"])
-   colnames(out) = "pval"
+   out <- as.data.frame(t(thing$table[2,]))
+   #colnames(out) = "pval"
    out
 }
 
-immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1)
+immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1, transformation = medcode)
 ```
 
 
@@ -2882,17 +2882,25 @@ immuneAlphaCompiled
 ```
 
 ```{r}
-immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(pval, method = "BH"))
+immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
 immuneAlphaTable
 ```
 
+### Continuous
+
 ```{r}
-locp <- immuneAlphaCompiled$pval
-qvalue(locp)
+immuneAlphaCompiledGaus <- use.immune %>% 
+  group_by(type, antigen, visitno) %>%
+  do(immuneValpha(., transformation = identity))
+immuneAlphaCompiledGaus
 ```
 
+```{r}
+immuneAlphaTableGaus <- immuneAlphaCompiledGaus %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
+immuneAlphaTableGaus
+```
 
-Does MDS1 associate with richness?
+## Does MDS1 associate with richness?
 ```{r}
 btN_MDS <- betta(summary(bN1)$estimate,
               summary(bN1)$error,
