@@ -2821,19 +2821,76 @@ btN1
 ```
 
 ```{r}
-gp41mtx <- cbind(1,
+gp120mtx <- cbind(1,
   psN1 %>% sample_data %>% as.matrix %>% as.data.frame %>% pull(IgG_Con.6.gp120.B_Month_6.5) %>% as.character %>% as.numeric %>% medcode
 )
-names(gp41mtx) = c("(Intercept)", "predictors")
+colnames(gp120mtx) = c("(Intercept)", "predictors")
 ```
 
 ```{r}
 btNmonth6gp120 <- betta(summary(bN1)$estimate,
               summary(bN1)$error,
-              gp41mtx
+              gp120mtx
 )
 btNmonth6gp120
 ```
+
+## Ibid, but for everything
+
+Step 1, make a data frame with BN1, but pub_id for each sample
+
+
+```{r}
+SampleNameToPubId <- psN1 %>% sample_data %>% as.data.frame %>% rownames_to_column() %>% as.tibble %>% dplyr::select(rowname, pub_id) %>% na.omit()
+SampleNameToPubId
+```
+
+```{r}
+use.immune %>% left_join(SampleNameToPubId)
+```
+
+```{r}
+immuneValpha <- function(x, ad = bN1, transformation = medcode2){
+  #x <- arrange(x, rowname)
+  x2 <- right_join(x, SampleNameToPubId, by = 'pub_id')
+  x3 <- x2[is.finite(x2$mag),]
+  
+  ad2 <- ad[is.finite(x2$mag)]
+  class(ad2) <- c("alpha_estimates", "list")
+  
+  gpXmtx = cbind(1, transformation(x3$mag))
+  #gpXmtx
+  
+   thing <- betta(summary(ad2)$estimate,
+               summary(ad2)$error,
+               gpXmtx
+ )
+   out <- as.data.frame(thing$table[2, "p-values"])
+   colnames(out) = "pval"
+   out
+}
+
+immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1)
+```
+
+
+```{r}
+immuneAlphaCompiled <- use.immune %>% 
+  group_by(type, antigen, visitno) %>%
+  do(immuneValpha(.))
+immuneAlphaCompiled
+```
+
+```{r}
+immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(pval, method = "BH"))
+immuneAlphaTable
+```
+
+```{r}
+locp <- immuneAlphaCompiled$pval
+qvalue(locp)
+```
+
 
 Does MDS1 associate with richness?
 ```{r}
@@ -2863,8 +2920,13 @@ richCI
 psN1rich <- psN1
 sample_data(psN1rich) <- merge(psN1@sam_data, richCI, by = "row.names") %>%
   transform(row.names = Row.names, Row.names = NULL)
-psN1rich %>% sample_data
+psN1rich %>% sample_data %>% as.data.frame
 ```
+
+```{r}
+psN1rich %>% sample_data %>% as.data.frame %>% dplyr::select(pub_id, richEst, richL)
+```
+
 
 ```{r}
 mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
@@ -2953,7 +3015,7 @@ donorTest(allparticipants.test)
 Do on everything
 ```{r}
 allparticipants.immune %>%
-  filter(ct == T) %>%
+  filter(ct == 'T') %>%
   group_by(type, antigen, visitno) %>%
   do(data.frame(donorTest(.))) %>%
   pass-> DonorEffectTable
@@ -2964,3 +3026,20 @@ Monkeys, I guess its debug aclock.
 DonorEffectTable
 ```
 
+Ok. There appears to be no significant difference in magnitude group for any category.
+
+```{r}
+allparticipants.immune %>%
+  filter(ct == 'T') %>%
+  group_by(type, antigen, visitno) %>%
+  do(data.frame(donorTest(.,  transformation = function(x){jac_box_cox(x)},
+                     family = 'gaussian'))) %>%
+  pass-> DonorEffectGaus
+```
+Monkeys, I guess its debug aclock.
+
+```{r}
+DonorEffectGaus
+```
+
+Same deal when I do a normal logistic regression.
