@@ -2878,36 +2878,14 @@ immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.
 immuneAlphaCompiled <- use.immune %>% 
   group_by(type, antigen, month) %>%
   do(immuneValpha(.)) %>%
-  ungroup
+  ungroup # if you forget to ungroup, pvalue calculations don't work correctly
 immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
 immuneAlphaTable
 ```
 
-Why is qval the same as p-values
-If I run it outside of tidyverse, things work as expected
-```{r}
-immuneAlphaCompiled$`p-values`
-"moo"
-p.adjust(immuneAlphaCompiled$`p-values`, method = "BH")
-```
-
-Inside though
-```{r}
-immuneAlphaCompiled %>% ungroup %>% mutate(Q2 = p.adjust(`p-values`, method = "BH")) 
-```
-
-Example for stack overflow
-
-```{r}
-testP <- immuneAlphaCompiled %>%  dplyr::select(p = `p-values`)
-testP
-
-testP %>% mutate(q = p.adjust(p))
-```
 
 
 ```{r}
-
 conciseImmuneAlphaTable <- immuneAlphaTable %>% 
   dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, P=`p-values`, Q = qval)
 toAlphaTable <- conciseImmuneAlphaTable %>%
@@ -2922,14 +2900,18 @@ toAlphaTable <- conciseImmuneAlphaTable %>%
     ),
     Q = cell_spec(format_round(Q, 3), "html",
                          bold = ifelse(Q < 0.2, T, F),
-                         background = ifelse(Q < 0.2, 'yellow', '')
+                         background = ifelse(Q < 0.2, 'lightyellow', '')
     )
-  )
+  ) %>%
+   mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+  mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen))
 
 toAlphaTable %>% kable("html", escape = F, digits = 3, align = 'c') %>%
   kable_styling("striped", "hover", full_width = F)  %>%
   collapse_rows(columns = 1:2, latex_hline = "full") %>%
   pass-> conciseAlphaTable.html
+
+conciseAlphaTable.html %>% cat(file = 'tables/conciseAlphaTable.html')
 
 conciseAlphaTable.html
 ```
@@ -2945,13 +2927,45 @@ immuneAlphaTable %>% mutate(
 
 ```{r}
 immuneAlphaCompiledGaus <- use.immune %>% 
-  group_by(type, antigen, visitno) %>%
-  do(immuneValpha(., transformation = identity))
+  group_by(type, antigen, month) %>%
+  do(immuneValpha(., transformation = identity)) %>%
+  ungroup
 ```
 
 ```{r}
 immuneAlphaTableGaus <- immuneAlphaCompiledGaus %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
 immuneAlphaTableGaus
+```
+
+```{r}
+conciseImmuneAlphaTableGaus <- immuneAlphaTableGaus %>% 
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, P=`p-values`, Q = qval)
+toAlphaTableGaus <- conciseImmuneAlphaTableGaus %>%
+  mutate(
+    Coef = cell_spec(format(Coef, digits = 3), "html",
+                     bold = ifelse(P < 0.05, T, F),
+                     italic = ifelse(P < 0.05 & Coef < 0, T, F),
+                     background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    P = cell_spec(format_round(P, 3), "html",
+                         bold = ifelse(P < 0.05, T, F),
+                         background = ifelse(P < 0.05, 'yellow', '')
+    ),
+    Q = cell_spec(format_round(Q, 3), "html",
+                         bold = ifelse(Q < 0.2, T, F),
+                         background = ifelse(Q < 0.2, 'lightyellow', '')
+    )
+  ) %>%
+   mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+  mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen))
+
+toAlphaTableGaus %>% kable("html", escape = F, digits = 3, align = 'c') %>%
+  kable_styling("striped", "hover", full_width = F)  %>%
+  collapse_rows(columns = 1:2, latex_hline = "full") %>%
+  pass-> conciseAlphaTableGaus.html
+
+conciseAlphaTableGaus.html %>% cat(file = 'tables/conciseAlphaTableGaus.html')
+
+conciseAlphaTableGaus.html
 ```
 
 ## Does MDS1 associate with richness?
