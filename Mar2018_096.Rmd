@@ -1498,7 +1498,7 @@ collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTableGaus.h
 concisePermKernTableGaus.html
 
 concisePermKernTableGaus.html %>% cat(file = 'tables/concisePermkernTableGaus.html')
-```
+```2
 
 ```{r}
 concisePermKernTableGaus %>% filter(Kernel_P < 0.05) -> shortPermkernTableGaus
@@ -2876,15 +2876,70 @@ immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.
 
 ```{r}
 immuneAlphaCompiled <- use.immune %>% 
-  group_by(type, antigen, visitno) %>%
-  do(immuneValpha(.))
-immuneAlphaCompiled
-```
-
-```{r}
+  group_by(type, antigen, month) %>%
+  do(immuneValpha(.)) %>%
+  ungroup
 immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
 immuneAlphaTable
 ```
+
+Why is qval the same as p-values
+If I run it outside of tidyverse, things work as expected
+```{r}
+immuneAlphaCompiled$`p-values`
+"moo"
+p.adjust(immuneAlphaCompiled$`p-values`, method = "BH")
+```
+
+Inside though
+```{r}
+immuneAlphaCompiled %>% ungroup %>% mutate(Q2 = p.adjust(`p-values`, method = "BH")) 
+```
+
+Example for stack overflow
+
+```{r}
+testP <- immuneAlphaCompiled %>%  dplyr::select(p = `p-values`)
+testP
+
+testP %>% mutate(q = p.adjust(p))
+```
+
+
+```{r}
+
+conciseImmuneAlphaTable <- immuneAlphaTable %>% 
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, P=`p-values`, Q = qval)
+toAlphaTable <- conciseImmuneAlphaTable %>%
+  mutate(
+    Coef = cell_spec(format(Coef, digits = 3), "html",
+                     bold = ifelse(P < 0.05, T, F),
+                     italic = ifelse(P < 0.05 & Coef < 0, T, F),
+                     background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    P = cell_spec(format_round(P, 3), "html",
+                         bold = ifelse(P < 0.05, T, F),
+                         background = ifelse(P < 0.05, 'yellow', '')
+    ),
+    Q = cell_spec(format_round(Q, 3), "html",
+                         bold = ifelse(Q < 0.2, T, F),
+                         background = ifelse(Q < 0.2, 'yellow', '')
+    )
+  )
+
+toAlphaTable %>% kable("html", escape = F, digits = 3, align = 'c') %>%
+  kable_styling("striped", "hover", full_width = F)  %>%
+  collapse_rows(columns = 1:2, latex_hline = "full") %>%
+  pass-> conciseAlphaTable.html
+
+conciseAlphaTable.html
+```
+
+```{r}
+immuneAlphaTable %>% mutate(
+  
+)
+```
+
 
 ### Continuous
 
@@ -2892,7 +2947,6 @@ immuneAlphaTable
 immuneAlphaCompiledGaus <- use.immune %>% 
   group_by(type, antigen, visitno) %>%
   do(immuneValpha(., transformation = identity))
-immuneAlphaCompiledGaus
 ```
 
 ```{r}
