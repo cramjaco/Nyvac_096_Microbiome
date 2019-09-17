@@ -1498,7 +1498,7 @@ collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTableGaus.h
 concisePermKernTableGaus.html
 
 concisePermKernTableGaus.html %>% cat(file = 'tables/concisePermkernTableGaus.html')
-```2
+```
 
 ```{r}
 concisePermKernTableGaus %>% filter(Kernel_P < 0.05) -> shortPermkernTableGaus
@@ -2856,7 +2856,7 @@ btNLoc$cov[2,2] /btNLoc$ssq_u
 ```{r}
 btNmonth6gp120Pic <- betta_pic(summary(bN1)$estimate,
               summary(bN1)$error,
-              gp120mtx[,2]
+              gpLocmtx[,2]
 )
 btNmonth6gp120Pic
 ```
@@ -3118,6 +3118,15 @@ g
 
 #cowplot::save_plot('figures/wunifrac_Agp41_Bgp120_pcoa.png', g, base_width = 8, base_height = 4)
 ```
+
+What if I do both richness and mds1, how well do those predict diversity. As an exemplar, P24 month 6.5, which fits both of these.
+
+
+psN1richP_p24m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode2(IgG_p24_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP_p24m6
+
+BOOKMARK2
 
 ## Next question. Do the donor and non donor groups ever have different immune responses?
 This is in response to a reviewr comment.

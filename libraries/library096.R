@@ -175,7 +175,8 @@ pass <- function(x){x}
 ## and zeros are below
 medcode <- function(vec){
     sapply(vec, function(x){
-    if(x < median(na.omit(vec))){0}else{1}
+      if(is.finite(x)){
+    if(x < median(na.omit(vec))){0}else{1}}else{NaN}
     }
            )
            }
