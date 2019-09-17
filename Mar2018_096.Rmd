@@ -2783,9 +2783,7 @@ walk2(psDf1b$taxLevels, psDf1b$Tax,
       ~write_csv(.y, path = paste0("tables/Tax/tax_",.x, ".csv")))
 ```
 
-```{r}
-save.image(file = "workspace.Rdata")
-```
+
 
 
 # Response to reviewers
@@ -2820,19 +2818,47 @@ btN1 <- betta(summary(bN1)$estimate,
 btN1
 ```
 
+### Two text examples, where we wil see if we can relate richness to a parameter
+
+Here is a discrete example
+originally I used Gp120 month 6.5. Switching to gp41 month 6.5, since subsequent analyis suggested that it does show a relationship, and so makes a more useful exemplar
 ```{r}
-gp120mtx <- cbind(1,
-  psN1 %>% sample_data %>% as.matrix %>% as.data.frame %>% pull(IgG_Con.6.gp120.B_Month_6.5) %>% as.character %>% as.numeric %>% medcode
+gpLocmtx <- cbind(1,
+  psN1 %>% sample_data %>% as.matrix %>% as.data.frame %>% pull(IgG_gp41_Month_6.5) %>% as.character %>% as.numeric %>% medcode
 )
-colnames(gp120mtx) = c("(Intercept)", "predictors")
+colnames(gpLocmtx) = c("(Intercept)", "predictors")
 ```
 
 ```{r}
-btNmonth6gp120 <- betta(summary(bN1)$estimate,
+btNLoc <- betta(summary(bN1)$estimate,
               summary(bN1)$error,
-              gp120mtx
+              gpLocmtx
 )
-btNmonth6gp120
+btNLoc
+```
+
+Estimate R2 value
+
+```{r}
+btNLoc$cov[2,2]/(
+sd(summary(bN1)$estimate) *
+sd(gpLocmtx[,2])
+)
+
+(
+sd(summary(bN1)$estimate) *
+sd(gpLocmtx[,2])
+)
+
+btNLoc$cov[2,2] /btNLoc$ssq_u
+```
+
+```{r}
+btNmonth6gp120Pic <- betta_pic(summary(bN1)$estimate,
+              summary(bN1)$error,
+              gp120mtx[,2]
+)
+btNmonth6gp120Pic
 ```
 
 ## Ibid, but for everything
@@ -2867,7 +2893,13 @@ immuneValpha <- function(x, ad = bN1, transformation = medcode2){
  )
    out <- as.data.frame(t(thing$table[2,]))
    #colnames(out) = "pval"
-   out
+   
+   # add R^2 value, from simple pearson correlation
+   locCor <- cor(summary(ad2)$estimate, gpXmtx[,2], method = "pearson")
+   r2 <- locCor^2
+   out2 <- data.frame(out, r2)
+   
+   out2
 }
 
 immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1, transformation = medcode)
@@ -2879,21 +2911,22 @@ immuneAlphaCompiled <- use.immune %>%
   group_by(type, antigen, month) %>%
   do(immuneValpha(.)) %>%
   ungroup # if you forget to ungroup, pvalue calculations don't work correctly
-immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
+immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p.values`, method = "BH"))
 immuneAlphaTable
 ```
 
 
-
+BOOKMARK
 ```{r}
 conciseImmuneAlphaTable <- immuneAlphaTable %>% 
-  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, P=`p-values`, Q = qval)
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, R2 = r2, P=`p.values`, Q = qval)
 toAlphaTable <- conciseImmuneAlphaTable %>%
   mutate(
     Coef = cell_spec(format(Coef, digits = 3), "html",
                      bold = ifelse(P < 0.05, T, F),
                      italic = ifelse(P < 0.05 & Coef < 0, T, F),
                      background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    R2 = cell_spec(round(R2, digits = 3), "html"),
     P = cell_spec(format_round(P, 3), "html",
                          bold = ifelse(P < 0.05, T, F),
                          background = ifelse(P < 0.05, 'yellow', '')
@@ -2916,11 +2949,14 @@ conciseAlphaTable.html %>% cat(file = 'tables/conciseAlphaTable.html')
 conciseAlphaTable.html
 ```
 
+#### Plot a few examples
+
 ```{r}
-immuneAlphaTable %>% mutate(
-  
-)
+plot(bN1, psN1, color = "IgG_gp41_Month_6.5")
 ```
+Not informative.
+
+Lets do this like the medcode example below, possibly color coding by yes no
 
 
 ### Continuous
@@ -2933,19 +2969,20 @@ immuneAlphaCompiledGaus <- use.immune %>%
 ```
 
 ```{r}
-immuneAlphaTableGaus <- immuneAlphaCompiledGaus %>% mutate(qval = p.adjust(`p-values`, method = "BH"))
+immuneAlphaTableGaus <- immuneAlphaCompiledGaus %>% mutate(qval = p.adjust(`p.values`, method = "BH"))
 immuneAlphaTableGaus
 ```
 
 ```{r}
 conciseImmuneAlphaTableGaus <- immuneAlphaTableGaus %>% 
-  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, P=`p-values`, Q = qval)
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, R2 = r2, P=`p.values`, Q = qval)
 toAlphaTableGaus <- conciseImmuneAlphaTableGaus %>%
   mutate(
     Coef = cell_spec(format(Coef, digits = 3), "html",
                      bold = ifelse(P < 0.05, T, F),
                      italic = ifelse(P < 0.05 & Coef < 0, T, F),
                      background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    R2 = cell_spec(ifelse(R2 < 0.01, format(R2, digits = 2),round(R2, digits = 2)) , "html"),
     P = cell_spec(format_round(P, 3), "html",
                          bold = ifelse(P < 0.05, T, F),
                          background = ifelse(P < 0.05, 'yellow', '')
@@ -2999,10 +3036,6 @@ sample_data(psN1rich) <- merge(psN1@sam_data, richCI, by = "row.names") %>%
 psN1rich %>% sample_data %>% as.data.frame
 ```
 
-```{r}
-psN1rich %>% sample_data %>% as.data.frame %>% dplyr::select(pub_id, richEst, richL)
-```
-
 
 ```{r}
 mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
@@ -3026,7 +3059,42 @@ psN1richP <- psN1rich %>% sample_data %>% as.data.frame %>%
 psN1richP
 ```
 
+As above, but this time colorcoding by group.
 
+```{r}
+psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(IgG_gp41_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP_gp41m6
+```
+
+```{r}
+psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(CD4._ANY.ENV.PTEG_Month_12)))) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP_pteg12
+```
+
+The above doesn't look so convincing to me. What if I just make PTEG the x axis
+
+
+```{r}
+psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
+  ggplot(aes(x = jitter(medcode(CD4._ANY.ENV.PTEG_Month_12)), y = richEst)) + geom_point() + scale_y_log10()
+psN1richP_pteg12
+```
+
+This looks pretty terrible. I wonder what the R2 for this relationship is?
+
+```{r}
+psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
+  ggplot(aes(x = CD4._ANY.ENV.PTEG_Month_12, y = richEst, ymin = richLb, ymax = richUb)) + geom_errorbar(colour = "gray80") + geom_point() + scale_y_log10() + theme_bw()
+psN1richP_pteg12
+```
+
+```{r}
+psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(IgG_gp41_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP_gp41m6
+```
 
 ```{r}
 psN1richMDSP<- psN1rich %>%
@@ -3119,3 +3187,7 @@ DonorEffectGaus
 ```
 
 Same deal when I do a normal logistic regression.
+
+```{r}
+save.image(file = "workspace.Rdata")
+```
