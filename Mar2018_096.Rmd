@@ -3092,7 +3092,7 @@ psN1richP_pteg12
 
 ```{r}
 psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(IgG_gp41_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10()
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(IgG_gp41_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10() + scale_colour_manual(values=cbPalette)
 psN1richP_gp41m6
 ```
 
@@ -3121,10 +3121,33 @@ g
 
 What if I do both richness and mds1, how well do those predict diversity. As an exemplar, P24 month 6.5, which fits both of these.
 
-
+```{r}
 psN1richP_p24m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode2(IgG_p24_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10()
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode2(IgG_p24_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10() + scale_colour_manual(values=cbPalette)
 psN1richP_p24m6
+```
+
+And as a logistic regression
+
+```{r}
+p26data <- psN1rich %>% sample_data %>% as.data.frame
+class(p26data) <- "data.frame"
+
+p26RMmod <- glm(medcode2(IgG_p24_Month_6.5) ~ MDS1 + richEst, family = "binomial", data = p26data)
+summary(p26RMmod)
+```
+
+
+```{r}
+p26Rmod <- glm(medcode2(IgG_p24_Month_6.5) ~ richEst, family = "binomial", data = p26data)
+p26Mmod <- glm(medcode2(IgG_p24_Month_6.5) ~ MDS1, family = "binomial", data = p26data)
+
+summary(p26Rmod)
+summary(p26Mmod)
+anova(p26RMmod, p26Rmod, p26RMmod)
+```
+
+
 
 BOOKMARK2
 
