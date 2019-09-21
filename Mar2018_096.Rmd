@@ -3102,6 +3102,7 @@ sample_data() %>%
 ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = richEst), size = 5, stroke = 1, shape = 21) +
 coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
 viridis::scale_fill_viridis(name = 'richEst', direction = 1, option = "viridis") +
+  coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
 #scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
 cowplot::theme_cowplot()
 psN1richMDSP
@@ -3109,14 +3110,14 @@ psN1richMDSP
 
 Summary of alpha
 
-```{r, fig.height = 6, fig.width=6}
+```{r, fig.height = 6, fig.width=8}
 par <- options()
-options(repr.plot.width=6, repr.plot.height= 11)
+#options(repr.plot.width=6, repr.plot.height= 11)
 #g <- grid.arrange(wuford_gp41, wuford_gp120, ncol = 2)
 g <- cowplot::plot_grid(psN1richMDSP, psN1richP_gp41m6, ncol = 1, labels = c("A", "B"), label_size = 24, align = "v")
 g
 
-#cowplot::save_plot('figures/wunifrac_Agp41_Bgp120_pcoa.png', g, base_width = 8, base_height = 4)
+cowplot::save_plot('figures/richnessMDS1Gp41.png', g, base_width = 6, base_height = 8)
 ```
 
 What if I do both richness and mds1, how well do those predict diversity. As an exemplar, P24 month 6.5, which fits both of these.
