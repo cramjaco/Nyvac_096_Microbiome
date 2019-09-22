@@ -1455,7 +1455,7 @@ write.csv(format(concisePermKernTableGaus, digits = 3), 'tables/concisePermkernT
 concisePermKernTableGaus %>%
 mutate(
     # this row needs to happen first, since the reformatting of the nother numbers makes them harder to call
-       MDS1_Coef = cell_spec(format(MDS1_Coef, digits = 3), "html",
+       MDS1_Coef = cell_spec(format(MDS1_Coef, digits = 2), "html",
                            bold = ifelse(Kernel_P < 0.05, 
                                          T,
                                          F),
@@ -3106,6 +3106,8 @@ DonorEffectTable
 ```
 
 Ok. There appears to be no significant difference in magnitude group for any category.
+
+
 
 ```{r}
 allparticipants.immune %>%
