@@ -2786,37 +2786,83 @@ walk2(psDf1b$taxLevels, psDf1b$Tax,
 
 
 
-# Response to reviewers
-## Ricness diversity
+# Response to reviewers: Richness
+
+
 The reviewer asks if it associates with MDS1. I'll check for associations with immunogenicity as well.
 
-Add richness estemate to psN1. Jump that over to psN2
-
-```{r}
-# fc <- psN1 %>% otu_table%>% make_frequency_count_table()
-```
-
+Calculate the alpha diversity values for psN1
 ```{r}
 bN1 <- breakaway(psN1)
 ```
 
+Initial look at alpha diveristy values.
 ```{r}
 plot(bN1)
 ```
-What am I supposed to make of this? Basically the UB dwarfs the actual values and I can hardly see differences. Normal ggplot transformations don't seem to help too much.
+Large confidence intervals. Also, probably best to examine in log space going forward.
+
+## Richness vs MDS1
 
 ```{r}
-bN1
-```
-
-```{r}
-btN1 <- betta(summary(bN1)$estimate,
+btN_MDS <- betta(summary(bN1)$estimate,
               summary(bN1)$error,
-              make_design_matrix(psN1, "IgG_Con.6.gp120.B_Month_12")
+              make_design_matrix(psN1, "MDS1")
 )
-
-btN1
+btN_MDS
 ```
+Not in any way that is statistically significant (p = 0.246)
+
+Some pre-computing
+```{r}
+richEsts <- bN1 %>% map_dbl("estimate")
+
+richCI <- bN1 %>% map_df("interval") %>% t %>% as.data.frame() %>% rename(richLb = V1, richUb = V2) %>% merge(as.data.frame(richEsts), by = "row.names") %>% transform(row.names = Row.names, richEst = richEsts, Row.names = NULL, richEsts = NULL)
+# need to add mds1 to this, or just tack this all onto psN1rich
+
+psN1rich <- psN1
+sample_data(psN1rich) <- merge(psN1@sam_data, richCI, by = "row.names") %>% transform(row.names = Row.names, Row.names = NULL)
+```
+
+Plot richness vs mds1
+```{r}
+psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst)) + geom_point() #+ geom_errorbar()
+```
+
+As above but with error bars.
+
+```{r}
+psN1richP <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb)) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP
+```
+
+## Unifrac Distance vs Richness
+The reviewer actually asked whether unifrac distance associates with alpha diversity. I've done that with MDS1, but not distance per se.
+Lets do one kernel regression, where we ask whether unifrac distance associates with richness.
+
+
+
+Kernel regression, weighted unifrac vs richness
+```{r}
+mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
+mirRich
+```
+Very similar p-value to running betta against MDS1.
+
+PCoA figure that compares MDS1 and MDS2 to richness
+```{r}
+psN1richMDSP<- psN1rich %>%
+sample_data() %>%
+ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = richEst), size = 5, stroke = 1, shape = 21) +
+viridis::scale_fill_viridis(name = 'richEst', direction = 1, option = "viridis") +
+  coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
+#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
+cowplot::theme_cowplot()
+psN1richMDSP
+```
+
 
 ### Two text examples, where we wil see if we can relate richness to a parameter
 
@@ -2837,43 +2883,17 @@ btNLoc <- betta(summary(bN1)$estimate,
 btNLoc
 ```
 
-Estimate R2 value
-
-```{r}
-btNLoc$cov[2,2]/(
-sd(summary(bN1)$estimate) *
-sd(gpLocmtx[,2])
-)
-
-(
-sd(summary(bN1)$estimate) *
-sd(gpLocmtx[,2])
-)
-
-btNLoc$cov[2,2] /btNLoc$ssq_u
-```
-
-```{r}
-btNmonth6gp120Pic <- betta_pic(summary(bN1)$estimate,
-              summary(bN1)$error,
-              gpLocmtx[,2]
-)
-btNmonth6gp120Pic
-```
-
-## Ibid, but for everything
+## Compare richness to each immunogenicity parameter.
 
 Step 1, make a data frame with BN1, but pub_id for each sample
 
+Pre calculations
 
 ```{r}
 SampleNameToPubId <- psN1 %>% sample_data %>% as.data.frame %>% rownames_to_column() %>% as.tibble %>% dplyr::select(rowname, pub_id) %>% na.omit()
-SampleNameToPubId
 ```
 
-```{r}
-use.immune %>% left_join(SampleNameToPubId)
-```
+A function that takes immunogenicity data, x (which we will pass in with tidyverse mapping functions), ad, the breakaway richness summary, and a transformation, defaults to medcode2 of the immunogenicity data.
 
 ```{r}
 immuneValpha <- function(x, ad = bN1, transformation = medcode2){
@@ -2902,9 +2922,11 @@ immuneValpha <- function(x, ad = bN1, transformation = medcode2){
    out2
 }
 
+# test a single use case
 immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1, transformation = medcode)
 ```
 
+Actually run the analysis, raw table
 
 ```{r}
 immuneAlphaCompiled <- use.immune %>% 
@@ -2915,8 +2937,8 @@ immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p.values`, m
 immuneAlphaTable
 ```
 
+Pretty up the table above for publication
 
-BOOKMARK
 ```{r}
 conciseImmuneAlphaTable <- immuneAlphaTable %>% 
   dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, R2 = r2, P=`p.values`, Q = qval)
@@ -2949,22 +2971,15 @@ conciseAlphaTable.html %>% cat(file = 'tables/conciseAlphaTable.html')
 conciseAlphaTable.html
 ```
 
-#### Plot a few examples
-
-```{r}
-plot(bN1, psN1, color = "IgG_gp41_Month_6.5")
-```
-Not informative.
-
-Lets do this like the medcode example below, possibly color coding by yes no
 
 
-### Continuous
+
+### As above but with continuous immunogenicity data.
 
 ```{r}
 immuneAlphaCompiledGaus <- use.immune %>% 
   group_by(type, antigen, month) %>%
-  do(immuneValpha(., transformation = identity)) %>%
+  do(immuneValpha(., transformation = identity)) %>% # TO DO, switch out identity for jac_box_cox, and then debug the error
   ungroup
 ```
 
@@ -3005,111 +3020,22 @@ conciseAlphaTableGaus.html %>% cat(file = 'tables/conciseAlphaTableGaus.html')
 conciseAlphaTableGaus.html
 ```
 
-## Does MDS1 associate with richness?
-```{r}
-btN_MDS <- betta(summary(bN1)$estimate,
-              summary(bN1)$error,
-              make_design_matrix(psN1, "MDS1")
-)
-btN_MDS
-```
-Not in any way that is statistically significant.
-
-The reviewer actually asked whether unifrac distance associates with alpha diversity. I've done that with MDS1, but not distance per se.
-Lets do one kernel regression, where we ask whether unifrac distance associates with richness.
-
-```{r}
-richEsts <- bN1 %>% map_dbl("estimate")
-richEsts
-```
-```{r}
-richCI <- bN1 %>% map_df("interval") %>% t %>% as.data.frame() %>% rename(richLb = V1, richUb = V2) %>% merge(as.data.frame(richEsts), by = "row.names") %>% transform(row.names = Row.names, richEst = richEsts, Row.names = NULL, richEsts = NULL)
-# need to add mds1 to this, or just tack this all onto psN1rich
-richCI
-```
 
 
-```{r}
-psN1rich <- psN1
-sample_data(psN1rich) <- merge(psN1@sam_data, richCI, by = "row.names") %>%
-  transform(row.names = Row.names, Row.names = NULL)
-psN1rich %>% sample_data %>% as.data.frame
-```
-
-
-```{r}
-mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
-mirRich
-```
-Very similar to running betta against MDS1.
-
-Plot MDS1 vs richness (with confidence intervals)
-And plot mds1 and mds2 against richness
-
-```{r}
-psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst)) + geom_point() #+ geom_errorbar()
-```
-
-
-
-```{r}
-psN1richP <- psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb)) + geom_point() + geom_errorbar() + scale_y_log10()
-psN1richP
-```
-
-As above, but this time colorcoding by group.
+Richness vs alpha above, but this time colorcoding by group.
 
 ```{r}
 psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
   ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, fill = as.factor(medcode_hl(IgG_gp41_Month_6.5)))) + geom_point(shape = 21, size = 4) + geom_errorbar() + scale_y_log10() + scale_fill_viridis_d(direction = -1, name = 'gp41 Primary Timepoint') + labs(x = "MDS1", y = "Richness (# ASVs)") + cowplot::theme_cowplot()
 psN1richP_gp41m6
 ```
-BOOKMARK3
-```{r}
-psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(CD4._ANY.ENV.PTEG_Month_12)))) + geom_point() + geom_errorbar() + scale_y_log10()
-psN1richP_pteg12
-```
-
-The above doesn't look so convincing to me. What if I just make PTEG the x axis
 
 
-```{r}
-psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
-  ggplot(aes(x = jitter(medcode(CD4._ANY.ENV.PTEG_Month_12)), y = richEst)) + geom_point() + scale_y_log10()
-psN1richP_pteg12
-```
+Summary figure for of alpha
 
-This looks pretty terrible. I wonder what the R2 for this relationship is?
 
-```{r}
-psN1richP_pteg12 <- psN1rich %>% sample_data %>% as.data.frame %>% na.omit %>%
-  ggplot(aes(x = CD4._ANY.ENV.PTEG_Month_12, y = richEst, ymin = richLb, ymax = richUb)) + geom_errorbar(colour = "gray80") + geom_point() + scale_y_log10() + theme_bw()
-psN1richP_pteg12
-```
 
-```{r}
-psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode(IgG_gp41_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10() + scale_colour_manual(values=cbPalette)
-psN1richP_gp41m6
-```
-
-```{r}
-psN1richMDSP<- psN1rich %>%
-sample_data() %>%
-ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = richEst), size = 5, stroke = 1, shape = 21) +
-coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
-viridis::scale_fill_viridis(name = 'richEst', direction = 1, option = "viridis") +
-  coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
-#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
-cowplot::theme_cowplot()
-psN1richMDSP
-```
-
-Summary of alpha
-
+Combined figure
 ```{r, fig.height = 6, fig.width=8}
 par <- options()
 #options(repr.plot.width=6, repr.plot.height= 11)
@@ -3119,53 +3045,6 @@ g
 
 cowplot::save_plot('figures/richnessMDS1Gp41.png', g, base_width = 6, base_height = 8)
 ```
-
-What if I do both richness and mds1, how well do those predict diversity. As an exemplar, P24 month 6.5, which fits both of these.
-
-```{r}
-psN1richP_p24m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
-  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, color = as.factor(medcode2(IgG_p24_Month_6.5)))) + geom_point() + geom_errorbar() + scale_y_log10() + scale_colour_manual(values=cbPalette)
-psN1richP_p24m6
-```
-
-And as a logistic regression
-
-```{r}
-p26data <- psN1rich %>% sample_data %>% as.data.frame
-class(p26data) <- "data.frame"
-
-p26RMmod <- glm(medcode2(IgG_p24_Month_6.5) ~ MDS1 + richEst, family = "binomial", data = p26data)
-summary(p26RMmod)
-```
-
-
-```{r}
-p26Rmod <- glm(medcode2(IgG_p24_Month_6.5) ~ richEst, family = "binomial", data = p26data)
-p26Mmod <- glm(medcode2(IgG_p24_Month_6.5) ~ MDS1, family = "binomial", data = p26data)
-
-summary(p26Rmod)
-summary(p26Mmod)
-anova(p26RMmod, p26Rmod, p26RMmod)
-```
-
-```{r}
-p26RmodFlip <- glm(richEst ~ medcode2(IgG_p24_Month_6.5), family = "gaussian", data = p26data)
-summary(p26RmodFlip)
-```
-
-I don't get it. Why doesn't this look like the results when I ran everything. What about with just betta
-
-```{r}
-immuneAlphaTest <- use.immune %>% 
-  filter(type == "IgG", antigen == "p24", month == "6.5") %>%
-  do(immuneValpha(.)) %>%
-  ungroup # if you forget to ungroup, pvalue calculations don't work correctly
-immuneAlphaTest
-```
-Ok. I only get these low p values if I use betta. Not if I use the same values and just do a simple linear model.
-I think I will stick with just immunogenicity vs richness.
-
-BOOKMARK2
 
 ## Next question. Do the donor and non donor groups ever have different immune responses?
 This is in response to a reviewr comment.
