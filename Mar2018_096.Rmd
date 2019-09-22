@@ -204,7 +204,7 @@ source('libraries/library096.R')
 ```{r}
 # For permutation tests, how fast do things need to run
 # 9999 for most runs, 99999 for publication quality ones suggested
-jnperm <- 9999
+jnperm <- 99999
 ```
 
 ```{r}
@@ -1414,7 +1414,7 @@ To make the grey lines, I sampled 95% confidence intervals of random draws from 
 
 ```{r}
 ptm = proc.time()
-tps <- CapVar(test.immune1, nperm = 9999, transformation = function(x){jac_box_cox(x)}, family = 'gaussian')
+tps <- CapVar(test.immune1, nperm = 9999, transformation = function(x){jac_box_cox_2(x)}, family = 'gaussian')
 proc.time() - ptm
 tps
 ```
@@ -1427,7 +1427,7 @@ use.immune %>%
 filter(ct == 'T') %>%
 group_by(type, antigen, month) %>%
 do(data.frame(CapVar(., nperm = jnperm,
-                     transformation = function(x){jac_box_cox(x)},
+                     transformation = function(x){jac_box_cox_2(x)},
                      family = 'gaussian'))) -> permKernTableGaus
 permKernTableGaus
 
@@ -1849,7 +1849,7 @@ MirMulti <- function(x, KsDf = psDf, ps = psN2, nperm = 9999){
     ydata <- ydata0[!yna]
     loc.Ks <- lapply(Ks, function(K){K[!yna, !yna]})  
   
-    bcxJSD <- MiRKAT(y = jac_box_cox(ydata), Ks = loc.Ks, out_type = "C", method = 'permutation', nperm = nperm)
+    bcxJSD <- MiRKAT(y = jac_box_cox_2(ydata), Ks = loc.Ks, out_type = "C", method = 'permutation', nperm = nperm)
     medJSD <- MiRKAT(y = medcode(ydata), Ks = loc.Ks, out_type = "D", method = 'permutation', nperm = nperm)
     mmDf = data.frame(
         taxLevels = KsDf$taxLevels,
@@ -2802,6 +2802,12 @@ plot(bN1)
 ```
 Large confidence intervals. Also, probably best to examine in log space going forward.
 
+Range of breakaway estimates
+```{r}
+summary(bN1)$estimate %>% range
+```
+
+
 ## Richness vs MDS1
 
 ```{r}
@@ -2976,10 +2982,12 @@ conciseAlphaTable.html
 
 ### As above but with continuous immunogenicity data.
 
+
+
 ```{r}
 immuneAlphaCompiledGaus <- use.immune %>% 
   group_by(type, antigen, month) %>%
-  do(immuneValpha(., transformation = identity)) %>% # TO DO, switch out identity for jac_box_cox, and then debug the error
+  do(immuneValpha(., transformation = jac_box_cox_2)) %>% 
   ungroup
 ```
 
@@ -3091,7 +3099,7 @@ allparticipants.immune %>%
   do(data.frame(donorTest(.))) %>%
   pass-> DonorEffectTable
 ```
-Monkeys, I guess its debug aclock.
+
 
 ```{r}
 DonorEffectTable
@@ -3103,7 +3111,7 @@ Ok. There appears to be no significant difference in magnitude group for any cat
 allparticipants.immune %>%
   filter(ct == 'T') %>%
   group_by(type, antigen, visitno) %>%
-  do(data.frame(donorTest(.,  transformation = function(x){jac_box_cox(x)},
+  do(data.frame(donorTest(.,  transformation = function(x){jac_box_cox_2(x)},
                      family = 'gaussian'))) %>%
   pass-> DonorEffectGaus
 ```

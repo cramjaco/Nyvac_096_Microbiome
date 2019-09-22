@@ -199,7 +199,13 @@ jac_box_cox <- function(vec){
     require(car)
     pt <- car::powerTransform(vec)
     car::bcPower(vec, pt$roundlam)
-    }
+}
+
+jac_box_cox_2 <- function(vec){
+  bct <- jac_box_cox(vec)
+  out <- scale(bct)
+  out
+}
     
 
 ## take a phyloseq object, and replace the old rownames of the tax_table
