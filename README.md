@@ -10,7 +10,7 @@ The downstream analysis can be run without re-doing the upstream portion. We def
 
 In order to use the breakaway package by adw36, which I need to calculate richness (and confedence intervals, and to run appropriate statistics), I need an R version > 3.5. This branch is for the newist version 3.6.1. 
 
-Currently, with the new R version, we are bugs central, especially with the modified tip glom methods.
+This change lead to new bugs, now resolved, and took care of some old bugs. I have re-written the readme to acomidate these things
 
 
 # Dependencies:
@@ -46,7 +46,11 @@ export PATH=$PATH:$HOME/R-3.6.1/bin
 to my `.bashrc` file and rebooting
 
 ## Anacondas
-Must contain jupyter notebook.
+No longer requires jupyter notebook. Required for python scripts in the upstram analyis. 
+
+## RStudio
+I have used both local rstudio and rstudio server for this. 
+Most recently rstudio server 1.2.1335
 
 ## For upstream analysis.
  * To run the demultiplexing, you will need to install qiime1. I recommend using anacondas to set up the following environment
@@ -58,18 +62,14 @@ When I ran the upstream analyis, all work was done in fall 2017 on R version 3.4
      
 
 ## For downstream analyis:
-###jupyter notebook or jupyter lab running in conda
-* If you get the error message when starting jupyter notebook:
-```
-> TypeError: register() takes from 2 to 3 positional arguments but 4 were given
-```
-you should run `unset BROWSER`
+###Rstudio or rstudio server.
+
  
 ### I have been using the r package `packrat` to keep track of packages.
 Some dependencies that were required on my system -- I have root access and so used `sudo apt install`. If you are doing this on a cluster, you may need to install many of these locally or get your system administrator to do it for you.
 
 
-
+### No longer a problem, but in case it re-surfaces...
 To make the igraph r package able to run, you need to modify your anacondas directory slightly, as per this github issue
 https://github.com/igraph/rigraph/issues/275#issuecomment-397957431
 
