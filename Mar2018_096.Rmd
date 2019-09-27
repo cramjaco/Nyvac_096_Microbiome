@@ -1,0 +1,3130 @@
+---
+title: An R Markdown document converted from "Mar2018_096.ipynb"
+output: html_notebook
+---
+
+The goal of this Notebook is to take the parts of NovemberPhyloProc.ipynb that I expect to go into the actual manuscript.
+
+# Figure Outline
+
+* Figure 1. Antibodies over time.
+
+* Figure 2. Weighted unifrac PCoA
+
+* Table 1. Kernel regression and weighted unifrac 1 test - binomial
+
+* Table S1. Kernel regression and weighted unifrac 1 test - gaussian
+
+* Table S2. Weighted unifrac components 2-N
+
+* Figure S1. Jensen Shannon at different agglomeration levels.
+
+* Figure S2. Statistically significant (p< 0.05, q < 0.2) family genus and species abundances (clr transformed) regressed against weighted unifrac 1.
+
+* Table S3. All family - genus and species vs antibody vs glm scores.
+
+* Figure 3. Stacked bars of key groups ordered by weighted unifrac axis 1.
+
+* Figure S3. Groups associated with IgGs.
+
+* Figure 4. Proportionality heat-map
+
+* Other supplements: The entire data table
+    * Basically the components of psN2, except the tree?
+    * Or can I just release the input data files?
+
+3/20/2017
+Re-ran whole pipeline end-to-end. Hits on everything (including igg gp41 0 day) except only trending on gp41 Month 6.5. However I don't see family level groups for gp41 that relate to community structure (q < 0.2, p < 0.05). I may just try running everything end to end a few more times to see what happens. This because I want to see how consistant (or otherwise) the results are between runs.
+Also, I'm going to start setting seeds now.
+
+# Loading libraries, functions and data
+
+## Libraries
+
+```{r}
+# only use library paths in the anaconda environment
+
+#.libPaths(grep('anaconda3', .libPaths(), value = T))
+```
+
+```{r}
+.libPaths()
+```
+
+```{r}
+R.version
+```
+
+```{r}
+sessionInfo()
+```
+
+```{r}
+# https://stackoverflow.com/questions/46354826/have-a-function-that-calls-library-and-takes-either-a-package-or-its-name-as-inp
+
+
+# Also return package version when loading in packages
+# accept strings or functions
+libver <- function(pac){
+
+    pac <- as.character(substitute(pac))
+    library(pac, character.only=TRUE)
+    packageVersion(pac)
+    }
+```
+
+```{r}
+#libver("dada2")
+#libver("ggplot2")
+```
+
+```{r}
+libver("Cairo")
+```
+
+```{r}
+# Much of the data handling
+libver('phyloseq')
+```
+
+```{r}
+# A bunch of environments, including ggplot, dplyr, tidyr, and broom, which I use a lot
+libver('tidyverse')
+```
+
+```{r}
+# Mostly for concatenating ggplots
+library(gridExtra); packageVersion("gridExtra")
+```
+
+```{r}
+# I use this surprisingly not a lot here.
+library(vegan); packageVersion("vegan")
+```
+
+```{r}
+# For making trees
+# libver('phangorn')
+```
+
+```{r}
+# A prerequesite to phangorn
+# libver("DECIPHER")
+```
+
+```{r}
+# Some pre-processing stuff
+# libver("dada2")
+```
+
+```{r}
+# I usually reshape with tidyverse tools now, but melt and cast are often easier in a pinch
+# libver("reshape2")
+```
+
+```{r}
+# For replacing NaNs without too much thought.
+# libver("imputeMissings")
+```
+
+```{r}
+# Deal with proportional data, especially useful for calculating proportionality phi
+libver('compositions')
+```
+
+```{r}
+# Works with tidyverse to make model output tidy
+libver('broom')
+```
+
+```{r}
+# Make pretty tables
+libver('knitr')
+libver('kableExtra')
+```
+
+```{r}
+# Let those pretty tables actually show up in a jupyter notebook
+#library('IRdisplay')
+```
+
+```{r}
+# For bootstrapping
+libver('boot')
+```
+
+```{r}
+# Calculate kernel regressions
+libver("MiRKAT")
+```
+
+```{r}
+libver("car")
+```
+
+```{r}
+#libver(mclust)
+```
+
+```{r}
+#libver(chemometrics)
+```
+
+```{r}
+libver(purrrlyr)
+```
+
+```{r}
+libver('qvalue')
+```
+
+```{r}
+libver("breakaway")
+```
+
+
+## Functions
+
+I have put the functions in a library file
+
+```{r}
+source('libraries/library096.R')
+```
+
+## Data
+
+```{r}
+# Set upOriginal to false, if you want to used user-reprocessed data.
+# Results may differ slightly from those in the manuscript due to inter-run variation
+# especially in the tree-ing algorithm.
+ upOriginal <- TRUE
+# upOriginal <- FALSE
+```
+
+```{r}
+# For permutation tests, how fast do things need to run
+# 9999 for most runs, 99999 for publication quality ones suggested
+jnperm <- 99999
+```
+
+```{r}
+# Data paths
+getwd()
+(mapping_file_path <- file.path('data', 'mapping_file_096a.csv'))
+(immune_file_path <- file.path('data', 'immune096b.csv'))
+
+if(upOriginal){
+     seqtab_file_path <- file.path('data', 'seqtab.nochimNov2017.csv')
+     taxa_file_path <- file.path('data', 'TaxaNov2017.csv')
+     tree_path <- file.path('data', 'phylogeny096NovTree.tre')
+    } else {
+     seqtab_file_path <- file.path('data1', 'seqtab.nochimMar2018.csv')
+     taxa_file_path <- file.path('data1', 'TaxaMar2018.csv')
+     tree_path <- file.path('data1', 'phylogeny096Mar2018tre.tre')
+}
+
+seqtab_file_path
+taxa_file_path
+tree_path
+```
+
+```{r}
+# Sequence data
+seqtab.nochim.data <- read.csv(seqtab_file_path)
+
+seqtabNames = gsub('\\.', '-',
+    gsub('.fastq', '', seqtab.nochim.data$X)
+                   )
+
+seqtab.nochim = as.matrix(seqtab.nochim.data[,-1])
+rownames(seqtab.nochim) = seqtabNames
+```
+
+```{r}
+# Taxa names
+taxa.data <- read.csv(taxa_file_path)
+taxa = taxa.data[,-1]
+
+## I reverse complemented the sequences to generate the taxonomy
+# (but only in this latest re-run, not the original)
+## The following undoes that reverse complement to get original sequence
+#rownames(taxa) = dada2:::rc(taxa.data[,1]) 
+
+if(upOriginal){
+    rownames(taxa) = (taxa.data[,1])} else {
+    rownames(taxa) = dada2:::rc(taxa.data[,1]) 
+}
+
+taxa <- as.matrix(taxa)
+```
+
+```{r}
+# Mapping file
+mapping.data <- read_csv(mapping_file_path) %>%
+mutate(pub_id = sapply(pub_id,  function(x) {as.numeric(gsub("096-", "", x))}))
+#mapping = mapping.data[,-1]
+#rownames(mapping) = mapping.data[,1]
+#mapping <- as.matrix(mapping)
+```
+
+```{r}
+head(mapping.data)
+```
+
+```{r}
+# Immune Data
+immune.data0 <- read_csv(immune_file_path)
+immune.data <- mutate(immune.data0, pub_id = sapply(pub_id,  function(x) {as.numeric(gsub("096-", "", x))}))
+levels(immune.data$antigen) <- gsub("[ /]", ".", levels(immune.data$antigen))
+```
+
+```{r}
+head(immune.data)
+```
+
+```{r}
+# Phylogenetic tree
+seqs <- dada2::getSequences(seqtab.nochim)
+names(seqs) <- seqs
+
+pt <- ape::read.tree(file=tree_path)
+
+pt2 <- phangorn::midpoint(pt)
+```
+
+```{r}
+immune.data$antigen %>% unique
+```
+
+Save options to a variable
+
+```{r}
+par0 <- options()
+```
+
+# Pre-processing
+
+```{r}
+## minimal sample identification data
+pub_id_key <- unique(immune.data[,c("pub_id", "rx_code", "ct")])
+
+sample_sm0 <- dplyr::select(mapping.data, SampleID, pub_id, sex = Sex, muVisit = Visit, muVisitRank = visitRank)
+sample_sm <- left_join(sample_sm0, pub_id_key, by = "pub_id") %>%
+as.data.frame %>%
+tibble::column_to_rownames(var = "SampleID")
+# rownames(sample_sm)
+# head(sample_sm)
+```
+
+```{r}
+# Make raw phyloseq object
+ot <- otu_table(seqtab.nochim, taxa_are_rows=FALSE)
+
+tt <- tax_table(taxa)
+dimnames(tt) = dimnames(taxa)
+
+spl <- sample_data(sample_sm)
+```
+
+psN is a really raw phyloseq object
+* OTU names are given as accession numbers
+* Numbers are in total counts
+* We have samples from both time points
+
+```{r}
+# Quite raw phyloseq object. Species names are given as accession numbers
+psN <- phyloseq(ot, tt, spl, pt2)
+
+psN
+```
+
+I want to make a phyloseq object for use in essentally all of the subsequent analyses.
+Features include:
+* Some basic taxonomic pre-processing.
+    * No uncharacterized phyla.
+    * Only OTUs that show up at least 10% of the time in the final data set .
+        * Do this after filtering samples.
+* No tip-glomming. I'll save that untill later.
+* Immune data is included in the sample data table. 
+    * We'll do Andrew's representitive IgGs and IgAs.
+* We only have samples from visit 1.
+* We only have samples from experemental (not control) groups.
+
+```{r}
+immune.data %>% pull(type) %>% unique
+```
+
+```{r}
+#immune.data %>% unite(type_antigen ,type, antigen, sep = "_")
+```
+
+```{r}
+immune.data %>% dplyr::select(pub_id, month, type, antigen, mag) %>% 
+filter(month %in% c(0, 6.5, 12)) %>%
+unite(type_antigen, type, antigen, sep = "_") %>%
+unite(type_antigen_month,type_antigen, month, sep = "_Month_") %>%
+spread(key = type_antigen_month, value = mag, drop = TRUE) -> immune.table
+```
+
+```{r}
+immune.table %>% head
+```
+
+## Initial Taxonomic filter.
+Some investegation suggested by the phyloseq tutorials
+to identify phyla for removal, and to identify an abundance threshold
+
+```{r}
+psN
+```
+
+```{r}
+psN %>% subset_samples(!is.na(pub_id))
+```
+
+```{r}
+# skip the blanks
+psN %>% subset_samples(!is.na(pub_id)) %>%
+# OTUs must be characterized to phylum
+subset_taxa(!is.na(Phylum)& !Phylum %in% c("", "uncharacterized")) -> psN_hasPhylum
+psN_hasPhylum
+# from 960 to 929 otus
+```
+
+Identifying and removing phyla with very few taxa in them
+
+```{r}
+prevdf = apply(X = otu_table(psN_hasPhylum),
+                 MARGIN = ifelse(taxa_are_rows(psN_hasPhylum), yes = 1, no = 2),
+                 FUN = function(x){sum(x > 0)})
+# Add taxonomy and total read counts to this data.frame
+prevdf = data.frame(Prevalence = prevdf,
+                      TotalAbundance = taxa_sums(psN_hasPhylum),
+                      tax_table(psN_hasPhylum))
+
+plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
+```
+
+```{r}
+filterPhyla = c("Verrucomicrobia", "Tenericutes", "Elusimicrobia", "Synergistetes")
+psN_MainPhyla = subset_taxa(psN_hasPhylum, !Phylum %in% filterPhyla)
+psN_MainPhyla
+```
+
+```{r}
+# Determining abundance threshold
+prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(psN_MainPhyla, "Phylum"))
+ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(psN_hasPhylum),color=Phylum)) +
+  # Include a guess for parameter
+  geom_hline(yintercept = 0.05, alpha = 0.5, linetype = 2) + geom_point(size = 2, alpha = 0.7) +
+  scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
+  facet_wrap(~Phylum) + theme(legend.position="none")
+```
+
+```{r}
+# Determining abundance threshold
+prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(psN_MainPhyla, "Phylum"))
+ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(psN_hasPhylum),color=Phylum)) +
+  # Include a guess for parameter
+  geom_hline(yintercept = 0.05, alpha = 0.5, linetype = 2) + geom_point(size = 2, alpha = 0.7) +
+  scale_x_continuous() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
+  facet_wrap(~Phylum) + theme(legend.position="none")
+```
+
+# Are differences between participants greater than differences within participants accross time-points?
+
+Make a phyloseq object like psN2 but with all participants, psN2A
+Code copied from above.
+
+## Constructing psN2
+(phyloseq object of relative abundances)
+
+And psN1 (phyloseq object of counts)
+
+psN1A and psN2A include all participants, and will be used to look at variability within participants
+
+```{r}
+psN %>%
+# add all the immune data
+phylo_join(immune.table, by = "pub_id") %>%
+# only use data from humans (no extraction controls)
+subset_samples(is.finite(muVisitRank)) %>%
+# only otus from known taxa that show up frequently enough
+subset_taxa(!is.na(Phylum)& !Phylum %in% c("", "uncharacterized")) %>%
+subset_taxa(!Phylum %in% filterPhyla) %>%
+# only otus that show up in at least 10% of samples
+prevalence_filter_taxa %>%
+# convert to relative abundance
+
+tag_phyloseq%>%
+# Instead of naming each taxon with its full sequence, we use the "tag" instead
+swap.phyloseq.taxnames %>%
+pass -> psN1A # Save pre relative abundance transformation
+
+# add is-male
+manColumn <- psN1A %>% sample_data %>% as('data.frame') %>% rownames_to_column  %>% mutate(isMale = testIsMaleVec(sex)) %>% dplyr::select(rowname, isMale)
+psN1A <- phylo_join(psN1A, manColumn, by = 'rowname')
+
+## psN2 is like psN1 but with relative abundances
+psN1A %>%
+transform_sample_counts(function(x) {x/sum(x)}) %>%
+# The "tag" is a new name that takes into account the rest of the taxonomy data
+# the tag may need to be updated after any agglomeration
+pass-> psN2A
+```
+
+```{r}
+# filter to just microbiome visit 1 and experemental treatments
+psN1A %>%
+subset_samples(muVisitRank == 1) %>%
+subset_samples(ct == "T") %>%
+pass -> psN1
+
+psN2A %>%
+subset_samples(muVisitRank == 1) %>%
+subset_samples(ct == "T") %>%
+pass -> psN2
+```
+
+```{r}
+# Calculate weighted unifrac distances and role those in.
+psN2.wuf <- phyloseq::distance(psN2, method = "wunifrac")
+psN2.pcoa <- capscale(psN2.wuf ~ 1)
+psN2.pcoa.df <- psN2.pcoa %>% scores(display = "sites") %>%
+        as.data.frame %>% 
+        rownames_to_column %>% 
+        dplyr::select('rowname', 'MDS1', 'MDS2') %>%
+        mutate(rMDS1 = rank(MDS1)) %>% # rank order of MDS1
+        mutate(rrMDS1 = formatC(format = "d", rMDS1, flag = "0", width=ceiling(log10(max(rMDS1))))) %>%
+        unite(newname, rrMDS1, rowname, sep = "_", remove = FALSE) %>%
+        dplyr::select(-rrMDS1)
+
+psN2 %>%
+phylo_join(
+    psN2.pcoa.df,
+    by = 'rowname'
+) -> psN2
+
+## Even if the data are counts, 
+## the weighted unifrac pcoa is still done on the relative abundances
+psN1 %>%
+phylo_join(
+    psN2.pcoa.df,
+    by = 'rowname'
+) -> psN1
+
+psN2A
+psN1A
+psN2
+psN1
+```
+
+# Data Curation Post mortum
+How many taxa were still present after each filtering step?
+
+```{r}
+# Find number of taxa in available samples
+psN %>%
+# add all the immune data
+phylo_join(immune.table, by = "pub_id") %>%
+# filter to just microbiome visit 1 and experemental treatments
+subset_samples(muVisitRank == 1) %>%
+subset_samples(ct == "T") %>%
+prevalence_filter_taxa(thresh = 0) %>%
+pass-> psInSamples
+(NInSamples <- dim(otu_table(psInSamples))[2])
+```
+
+```{r}
+# Number of taxa with unidentified phyla
+psInSamples %>%
+subset_taxa(!is.na(Phylum)& !Phylum %in% c("", "uncharacterized")) %>%
+pass -> psIdentifiedPhylum
+(NUnkPhylum <- NInSamples - dim(otu_table(psIdentifiedPhylum))[2])
+```
+
+```{r}
+filterPhyla
+```
+
+```{r}
+# Phyla removed because they are in filterPhyla 
+# -- each of which show up fewer than 20 times in the data set
+psIdentifiedPhylum %>%
+subset_taxa(!Phylum %in% filterPhyla) %>%
+pass -> psNotPhylaFiltered
+(NFiltPhyla <- dim(otu_table(psIdentifiedPhylum))[2] - dim(otu_table(psNotPhylaFiltered))[2])
+```
+
+```{r}
+# Taxa removed because there were in fewer than 10% of the samples
+psNotPhylaFiltered %>%
+prevalence_filter_taxa %>%
+pass -> psPFT
+dim(otu_table(psNotPhylaFiltered))[2] - dim(otu_table(psPFT))[2]
+```
+
+# Immune figure
+How to participants' immune profiles change over time?
+
+```{r}
+# When were participants vaccinated?
+# Copied from protocol apendix E
+# visitno 1 is a screening visit, I assign it NaN
+dayTable = data.frame(
+    visitno = seq(from = 1, to = 14, by = 1),
+    day = c(NaN, 0, 14, 28, 42, 84, 98, 168, 182, 196, 273, 364, 455, 545),
+    month = c(NaN, 0, 0.5, 1, 1.5, 3, 3.5, 6, 6.5, 7, 9, 12, 15, 18)
+)
+vac <- data.frame(
+    visitno = c(2, 4, 6, 8)
+    )
+vac <- left_join(vac, dayTable, by = 'visitno')
+
+vac
+```
+
+```{r}
+# Representitive antigens for further considerations
+# These are essentially zero (mag = 1) at baseline
+ants1 <- c('Con.6.gp120.B', 'ZM96.gp140', 'gp70_B.CaseA_V1_V2')
+# These have measurable baseline magnitudes
+ants2 <- c('gp41', 'p24')
+```
+
+```{r}
+donor.immune <-  psN2 %>% sample_data %>% as('data.frame') %>% dplyr::select(pub_id) %>%
+left_join(immune.data, by = 'pub_id')
+donor.immune %>% head
+```
+
+```{r}
+psN %>% sample_data %>%
+as('data.frame') %>% 
+filter(!is.na(pub_id)) %>%
+pull(pub_id) %>%
+unique %>%
+pass -> microbiomeCohort
+```
+
+```{r}
+immune.data %>% filter(pub_id %in% microbiomeCohort) %>%
+pass -> donor.immune
+
+donor.immune %>% head
+```
+
+```{r}
+options(par0)
+iggplot <- immune.data %>%
+mutate(inCohort = pub_id %in% microbiomeCohort) %>%
+filter(type == 'IgG', antigen %in% c(ants1, ants2)) %>%
+mutate(antigen = factor(antigen, levels = c(ants2, ants1))) %>% # reorder facets
+ggplot(aes(x = month, y =mag, group = pub_id, colour = inCohort, alpha = inCohort)) +
+geom_line() +
+geom_point() +
+geom_rug(data = vac, aes(x = month), inherit.aes = F, color = 'blue') +
+facet_grid(antigen ~ rx_code, labeller = label_wrap_gen()) +
+theme_bw() +
+theme(strip.text.y = element_text(angle = 0),
+      axis.text.x = element_text(angle = 90, hjust = 1)) +
+scale_y_log10(breaks = 10^(0:5)) +
+scale_colour_manual(values = c("black", "red")) +
+scale_alpha_manual(values = c(.6, 1)) + 
+labs(y = "BAMA Response Magnitude")
+
+
+
+ggsave('figures/useiggsAllParticipants.svg')
+# To fix. Control groups don't show up in this version.
+
+```
+```{r}
+iggplot
+```
+
+
+```{r}
+iggplot <- immune.data %>%
+mutate(inCohort = pub_id %in% microbiomeCohort) %>%
+filter(type %in% c('IgA', 'CD4+') & antigen %in% c(ants2, 'ANY.ENV.PTEG'))%>%
+mutate(antigen = factor(antigen, levels = c(ants2, 'ANY.ENV.PTEG'))) %>% # reorder facets
+ggplot(aes(x = month, y =mag, group = pub_id, colour = inCohort, alpha = inCohort)) +
+geom_line() +
+geom_point() +
+geom_rug(data = vac, aes(x = month), inherit.aes = F, color = 'blue') +
+facet_grid(antigen ~ rx_code, labeller = label_wrap_gen(), scales = 'free_y') +
+theme_bw() +
+theme(strip.text.y = element_text(angle = 0),
+      axis.text.x = element_text(angle = 90, hjust = 1)) +
+scale_y_log10(breaks = 10^c(
+    seq(from = -2, to = 0, by = 0.25), seq(from = 0, to = 5, by = 1)
+), labels = function(x) round(as.numeric(x), digits=3)) +
+scale_colour_manual(values = c("black", "red")) +
+scale_alpha_manual(values = c(.6, 1)) +
+labs(y = "BAMA Response Magnitude")
+
+iggplot
+
+ggsave('figures/useIgACD4AllParticipants.svg')
+# To fix. Control groups don't show up in this version.
+```
+
+```{r}
+iggplot <- donor.immune %>% filter(type == 'IgG', antigen %in% c(ants1, ants2)) %>%
+mutate(antigen = factor(antigen, levels = c(ants2, ants1))) %>% # reorder facets
+ggplot(aes(x = month, y =mag, group = pub_id)) + geom_point(alpha = 0.6) + geom_line(alpha = 0.4) +
+geom_rug(data = vac, aes(x = month), inherit.aes = F, color = 'blue') +
+facet_grid(antigen ~ rx_code, labeller = label_wrap_gen()) +
+theme_bw() + theme(strip.text.y = element_text(angle = 0), axis.text.x = element_text(angle = 90, hjust = 1)) +
+scale_y_log10(breaks = 10^(0:5)) +
+labs(y = "BAMA Response Magnitude")
+iggplot
+ggsave('figures/useiggs.svg') # I can no longer save pngs with transparency, going to svg
+# To fix. Control groups don't show up in this version.
+```
+
+## Magnitude and variance of vaccine response per group
+
+```{r}
+colnames(immune.data)
+```
+
+Plan. Calculate mean and variance of each antigen-type at visit 9, and at baseline.
+
+```{r}
+#
+geomean <- function(x, na.rm = FALSE, trim = 0, ...)
+{
+exp(mean(log(x, ...), na.rm = na.rm, trim = trim, ...))
+}
+ 
+geosd <- function(x, na.rm = FALSE, ...)
+{
+exp(sd(log(x, ...), na.rm = na.rm, ...))
+}
+```
+
+```{r}
+immune.data %>% dplyr::filter(visitno %in% c(9), ct == "T") %>% dplyr::select(pub_id, antigen, visitno, mag, mag_bl, type) %>% group_by(antigen, type) %>%
+summarize(mean_mag = geomean(mag), mean_bl = geomean(mag_bl), sd_mag = geosd(mag), sd_bl = geosd(mag_bl)) %>%
+mutate(var_over_mean_mag = sd_mag^2/mean_mag, var_over_mean_bl = sd_bl^2/mean_bl)
+```
+
+Mean variance and variance over mean of each value. 
+
+```{r}
+immune.data %>% dplyr::filter(visitno %in% c(9), ct == "T") %>% dplyr::select(pub_id,rx_code, antigen, visitno, mag, mag_bl, type) %>% group_by(rx_code, antigen, type) %>%
+summarize(mean_mag = geomean(mag), mean_bl = geomean(mag_bl), sd_mag = geosd(mag), sd_bl = geosd(mag_bl)) %>%
+mutate(var_over_mean_mag = sd_mag^2/mean_mag, var_over_mean_bl = sd_bl^2/mean_bl) %>% 
+gather(key = "meas", value = "value", mean_mag, mean_bl, sd_mag, sd_bl, var_over_mean_mag, var_over_mean_bl) %>% 
+group_by(antigen, type, meas) %>% summarize(mean_val = mean(value)) %>%
+spread(key = "meas", value = "mean_val")
+```
+
+As above, but this time, calculated seperately for each treatment group and then those values averaged.
+ZM96 and gp70 surprisingly large variance over mean. Maybe should look at delta magnitude
+
+```{r}
+immune.data%>% head
+```
+
+```{r}
+immune.data %>% 
+mutate(mag_delta = mag / mag_bl) %>%
+mutate(mag_delta = if_else(mag_delta < 1, 1, mag_delta)) %>%
+dplyr::filter(visitno %in% c(9), ct == "T") %>% dplyr::select(pub_id,rx_code, antigen, visitno, mag, mag_bl, mag_delta, type) %>% group_by(rx_code, antigen, type) %>%
+summarize(mean_mag = geomean(mag), mean_bl = geomean(mag_bl), mean_delta = geomean(mag_delta), sd_mag = geosd(mag), sd_bl = geosd(mag_bl), sd_delta = geosd(mag_delta)) %>%
+mutate(var_over_mean_mag = sd_mag^2/mean_mag, var_over_mean_bl = sd_bl^2/mean_bl, var_over_mean_delta = sd_delta^2/mean_delta) %>% 
+gather(key = "meas", value = "value", mean_mag, mean_bl, sd_mag, sd_bl, var_over_mean_mag, var_over_mean_bl, mean_delta, sd_delta, var_over_mean_delta) %>% 
+group_by(antigen, type, meas) %>% summarize(mean_val = mean(value)) %>%
+spread(key = "meas", value = "mean_val") %>%
+arrange(type)
+```
+
+## Number of participants per group
+
+### All participants
+
+```{r}
+immune.data %>% 
+group_by(rx_code) %>%
+summarize(Unique_ids = n_distinct(pub_id))
+```
+
+### Participants with microbiome data
+
+```{r}
+donor.immune %>% 
+group_by(rx_code) %>%
+summarize(Unique_ids = n_distinct(pub_id))
+```
+
+### Further breakdown of participants providing microbiota per group
+
+Number of participants with a given day of first sample.
+
+```{r}
+psN2 %>% sample_data %>% data.frame %>% group_by(muVisit) %>% summarize(n = length(muVisit))
+```
+
+How many donors were there from each treatment?
+
+```{r}
+psN2 %>% sample_data %>% data.frame %>% group_by(rx_code) %>% summarize(n = length(muVisit))
+```
+
+Breakdown by both visit and treatment
+
+```{r}
+sampleBreakdown <- psN2 %>% sample_data %>% data.frame %>% group_by(muVisit, rx_code) %>% summarize(n = length(muVisit)) %>% spread(key = rx_code, value = n, fill = 0) %>% mutate(total = T1 + T2 + T3 + T4)
+
+sbcs <- colSums(sampleBreakdown)
+
+sampleBreakdown <- bind_rows(sampleBreakdown, sbcs)
+
+sampleBreakdown %>%
+kable("html", escape = F, digits = 3, align = 'c') %>%
+#kable_styling("striped", "hover", full_width = F) %>%
+#collapse_rows(columns = 1:2, latex_hline = "full") %>%
+pass-> sampleBreakdown.html
+```
+
+```{r}
+sampleBreakdown.html
+```
+
+
+```{r}
+
+sampleBreakdown.html %>% cat(file = 'tables/sampleBreakdown.html')
+```
+
+# Weighted Unifrac
+
+## Variability within vs between participants
+
+```{r}
+psN2A.wuf <- phyloseq::distance(psN2A, method = "wunifrac")
+```
+
+```{r}
+psN2A %>% sample_data %>% .[1:5, 1:10]
+```
+
+```{r}
+psN2A %>% sample_data %>% as("data.frame") %>% rownames_to_column(var = "Sample") %>% dplyr::select(Sample, pub_id) %>%
+pass -> S2P
+```
+
+```{r}
+All.equal <- Vectorize(function(x,y){x == y})
+```
+
+```{r}
+## Convert distance matrix into long form matrix
+psN2A.wuf %>% as.matrix %>% as.data.frame %>%
+rownames_to_column(var = "SampleX")%>%
+gather(key = "SampleY", value = "WufDist", -SampleX) %>%
+left_join(S2P, by = c("SampleX" = "Sample")) %>% rename(pub_id_x = pub_id) %>%
+left_join(S2P, by = c("SampleY" = "Sample")) %>% rename(pub_id_y = pub_id) %>%
+mutate(SampleX = as.numeric(str_extract(SampleX, "[0-9][0-9]"))) %>%
+mutate(SampleY = as.numeric(str_extract(SampleY, "[0-9][0-9]"))) %>%
+## discard diagonal discard and upper half of triangular matrix
+filter(SampleX < SampleY) %>%
+mutate(isSamePerson = All.equal(pub_id_x, pub_id_y)) %>%
+# ## discard cases where pub_id is unknown
+# filter(is.finite(pub_id_x) & is.finite(pub_id_y))
+pass -> AllWufDist
+
+AllWufDist %>% head
+```
+
+```{r}
+#AllWufDist %>% ggplot(aes(x = isSamePerson, y = WufDist)) + geom_violin() + geom_dotplot(binaxis = "y", stackdir = "center", binwidth = .005)
+```
+
+Get Mean values for between participant and within participant weighted unifrac distances.
+
+```{r}
+WufMeans <- AllWufDist %>% group_by(isSamePerson) %>% summarize(mean = mean(WufDist))
+WufMeans
+```
+
+```{r}
+#SameAndDiff <- data.frame(comparison = c("different", "same"), WufMeans$mean)
+SameAndDiff <- WufMeans %>% spread(key = isSamePerson, value = mean) %>% rename(between = 'FALSE', within = 'TRUE') %>% mutate(diff = between-within)
+SameAndDiff
+#SameAndDiff[1,2] - SameAndDiff[2,2] # Difference in weighted unifrac dissimilarity between same and different partcipants
+```
+
+### Bootstrapped confidence intervals
+Bootstrap some confidence intervals of within and between participant weighted unifrac distances.
+
+```{r}
+# Split the data
+SamePersonWufDist <- AllWufDist %>% filter(isSamePerson) #%>% dplyr::select(WufDist)
+DifferentPersonWufDist <- AllWufDist %>% filter(!isSamePerson)
+set.seed(334)
+
+bootsSame <- rsample::bootstraps(SamePersonWufDist, times = 10000)
+bootsDifferent <- rsample::bootstraps(DifferentPersonWufDist, times = 10000)
+```
+
+```{r}
+mean_of_bootstrap <- function(split){
+    locVals <- rsample::analysis(split)$WufDist
+    mean(locVals)
+}
+```
+
+```{r}
+boot_meansSame <- bootsSame %>% mutate(mean = map_dbl(splits, mean_of_bootstrap)) %>% dplyr::select(mean)
+
+boot_meansDifferent <- bootsDifferent %>% mutate(mean = map_dbl(splits, mean_of_bootstrap)) %>% dplyr::select(mean)
+
+boot_means <- bind_cols(within = boot_meansSame$mean, between = boot_meansDifferent$mean) %>%
+mutate(isDifferentBigger = between>within, 
+      DifMinusSame = between - within)
+#boot_means
+
+1- sum(boot_means$isDifferentBigger)/length(boot_means$isDifferentBigger)
+```
+
+The above is a bootstrapped P value that the two are different from eachother. Per a conversation I had with Klaus Hubert.
+Still need to find a justification that this approach is legit.
+
+```{r}
+boot_means %>% ggplot(aes(x = DifMinusSame)) + geom_histogram()
+```
+
+A histogram of bootstrapped differences between within participant and between participant mean values. 
+
+```{r}
+quantile(boot_means$DifMinusSame, c(0.025, 0.5, 0.975))
+```
+
+95% confidence intervals of the differences between same and different person microbiota.
+
+### Permutation based P values
+
+```{r}
+PermWufDist <- AllWufDist %>% modelr::permute(10000, WufDist)
+mean_of_is_same <- function(df){df %>% as.data.frame %>% group_by(isSamePerson) %>% summarize(mean(WufDist)) %>% spread(isSamePerson, `mean(WufDist)`)}
+```
+
+```{r}
+test <- PermWufDist %>% pull(perm) %>% .[[1]] %>% as.data.frame
+test %>% head
+mean_of_is_same(test)
+```
+
+```{r}
+SameAndDiff
+```
+
+```{r}
+permutedMeans <- PermWufDist %>% mutate(meanvals = map(perm, mean_of_is_same)) %>% dplyr::select(meanvals) %>% unnest %>% 
+rename(between = `FALSE`, within = `TRUE`) %>%
+mutate(diff = between - within, absdif = abs(diff)) %>%
+mutate(isExtreme = absdif >= SameAndDiff$diff, isExtreme1Tail = diff >= SameAndDiff$diff)
+#permutedMeans %>% ggplot(aes(x = diff)) + geom_histogram() + geom_vline(xintercept = SameAndDiff$diff)
+```
+
+```{r}
+permutedMeans %>% ggplot(aes(x = diff)) + geom_histogram() + geom_vline(xintercept = SameAndDiff$diff)
+```
+
+Fraction of permuted values less extreme than difference between same and different.
+
+```{r}
+#permutedMeans %>% mutate(isExtreme = absdif >= SameAndDiff$diff)
+sum(permutedMeans$isExtreme) / length(permutedMeans$isExtreme)
+sum(permutedMeans$isExtreme1Tail) / length(permutedMeans$isExtreme1Tail)
+```
+
+Two and one tailed permuted p-values
+
+### Plot of confedence interval and raw data
+
+```{r}
+options(repr.plot.width=6, repr.plot.height= 6)
+boot_means  %>% dplyr::select(within, between) %>% gather(key = "comparison", value = "WufDist") %>% ggplot(aes(x = comparison, y = WufDist)) + 
+geom_dotplot(data = AllWufDist %>% mutate(isSamePerson2 = if_else(isSamePerson, "within", "between"))
+             , aes(x = isSamePerson2, y = WufDist), binaxis = "y", stackdir = "center", binwidth = .01, colour = "gray40", fill = "white") + 
+geom_violin(fill = NA) + 
+geom_point(data = data.frame(comparison = c("within", "between"), WufDist = WufMeans$mean), aes(x = comparison, y = c(WufDist[2], WufDist[1])), shape = 22, fill = "black", size = 2)+
+theme_bw() +
+scale_x_discrete(limits = c("within", "between")) + labs(y = "Weighted Unifrac Distance") #
+ggsave('figures/BetweenVsWithin.png')  
+```
+
+Figure: Open circles represent weighed unifrac distances associated with pairs of samples taken from the same set of participants, at different time points ("within"), and samples taken from different sets of participants ("between"). Black squares indicate the observed mean of the within and between values. Violins indicate distributions of bootstrapped mean values.
+
+## Variability at earliest sampling
+
+```{r}
+psN2.wuf <- phyloseq::distance(psN2, method = "wunifrac")
+```
+
+```{r}
+psN2.pcoa <- capscale(psN2.wuf ~ 1)
+```
+
+```{r}
+# How much variance si explained by each weighted unifrac axis
+# Note, ten axes cover 95% of the variance. 
+# I'm not going to look beyond that for any test.
+data.frame(eig = psN2.pcoa$CA$eig) %>%
+rownames_to_column('axis') %>%
+mutate(proportion = eig/sum(eig)) %>%
+mutate(cumulative = cumsum(proportion))
+```
+
+```{r}
+my_breaks = c(1, 75, 250, 500, 1000,2000)
+psN2 %>% mutate_phyloseq_sample(
+                               mc41 = factor(medcode_hl(IgG_gp41_Month_0)),
+                                                log120 = (IgG_Con.6.gp120.B_Month_12)) -> psN2_mod
+psN2_mod%>%
+sample_data() %>%
+ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = mc41), size = 5, stroke = 1, shape = 21) +
+coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
+viridis::scale_fill_viridis(name = 'gp41 Baseline', direction = -1, discrete = TRUE) +
+#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
+theme_bw() -> wuford_gp41
+
+
+psN2_mod %>%
+sample_data() %>%
+ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = log120), size = 5, stroke = 1, shape = 21) +
+coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
+viridis::scale_fill_viridis(name = 'gp120 Final', direction = 1, trans = "sqrt",
+                           breaks = my_breaks, labels = my_breaks) +
+#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
+theme_bw() -> wuford_gp120
+
+par <- options()
+options(repr.plot.width=11, repr.plot.height= 4)
+#g <- grid.arrange(wuford_gp41, wuford_gp120, ncol = 2)
+g <- cowplot::plot_grid(wuford_gp41, wuford_gp120, ncol = 2, labels = c("A", "B"), label_size = 24)
+g
+#ggsave('figures/wunifrac_Agp41_Bgp120_pcoa.png', g, width = 8, height = 4)
+#ggsave('figures/wunifrac_Agp41_Bgp120_pcoa.svg', g, width = 8, height = 4)
+cowplot::save_plot('figures/wunifrac_Agp41_Bgp120_pcoa.png', g, base_width = 8, base_height = 4)
+cowplot::save_plot('figures/wunifrac_Agp41_Bgp120_pcoa.svg', g, base_width = 8, base_height = 4)
+```
+
+# Kernel Regression and Weighted Unifrac GLM
+
+```{r}
+wufKN2 <- D2K(as.matrix(psN2.wuf))
+```
+
+```{r}
+muDoners <- unique(sample_data(psN2)$pub_id)
+```
+
+```{r}
+immune.data %>%
+filter(pub_id %in% muDoners) %>%
+filter(
+    (type == 'IgG' & 
+    antigen %in% ants1 &
+    month %in% c(6.5,12)
+    ) |
+    (type %in% c('IgG', 'IgA') &
+     antigen %in% ants2 &
+     month %in% c(0,6.5,12)
+    ) |
+    type == 'CD4+' &
+    antigen == 'ANY.ENV.PTEG' &
+    month %in% c(6.5, 12)
+      )-> use.immune
+head(use.immune)
+```
+
+```{r}
+# Do permanova and related tests to a variable of interest
+# This function is pretty specific to this analysis, so I'm going to leave it
+# here in the notebook file
+CapVar <- function(x, nperm = 9999, transformation = medcode2, family = 'binomial'){
+    ## Pull out the needed data
+    
+    psN2.wMDS <- psN2 %>% phylo_join(scores(psN2.pcoa, display = "sites", choices = 1:10) %>%
+                    as.data.frame %>% rownames_to_column, by = 'rowname')
+    
+    medWuf <- NA
+    rankWuf <- NA
+    locPS <- phylo_join(psN2.wMDS, x, by = 'pub_id') 
+    ydata0 <- sample_data(locPS)$mag
+    yna <- is.na(ydata0)
+    #loc.wuf <- wufKN2
+    #loc.jsd <- jsdKN2
+    ydata <- ydata0
+    
+    ydata <- ydata0[!yna]
+    loc.wuf2 <- psN2.wuf %>% as.matrix %>% .[!yna, !yna]
+    
+    medWuf <- adonis(loc.wuf2 ~ transformation(ydata), permutations = nperm)
+    #medWuf$aov.tab[1,c('R2', 'Pr(>F)')]
+    
+    ## Capscale returns the same results as adonis (permanova), but also gives some other interesting results
+    
+    medWufCap <- capscale(loc.wuf2 ~ transformation(ydata))
+    capanova <- anova(medWufCap, permutations = nperm)
+    
+    samDf <- locPS %>% sample_data %>% as('data.frame') %>% rownames_to_column %>%
+     left_join(
+        vegan::scores(medWufCap, display = 'sites') %>% as.data.frame %>% dplyr::select(CAP1) %>%
+        rownames_to_column, by = 'rowname') %>% .[!yna,]
+    
+#     # Is giving only positive results with CAP1, not sure why
+#     glmAnova <- glm(medcode(ydata) ~  MDS1 + CAP1, data = samDf, family = 'binomial') %>% anova(test = "Chisq")
+    loc_glm <- glm(transformation(ydata) ~  MDS1, data = samDf, family = family)
+    glmAnova <- loc_glm %>% anova(test = "Chisq")
+    #glmAnova['CAP1', 'Deviance']/out_capanova['NULL', 'Resid. Dev']
+    
+    ## check against mirkat
+    loc.Kwuf2 <- wufKN2[!yna, !yna]
+    mirkatP <- MiRKAT(y = transformation(ydata), Ks = loc.Kwuf2, out_type = "C", method = 'permutation', nperm = nperm)
+    
+    #list(medWuf, capanova, mirkatP)
+    
+    pred_pct <- predict(loc_glm, type = "response")
+    pred_01 <- as.numeric(predict(loc_glm, type = "response") > 0.5)
+    
+    accuracy <- mean(transformation(ydata) == pred_01)
+    
+        null_glm <- update(loc_glm, ~1)
+
+    # Canonical caluclation of McFadden's R2 for the GLM
+    McFadden = 1- (logLik(loc_glm)/ logLik(null_glm))
+    L.full = logLik(loc_glm)
+    D.full = -2 * L.full
+    L.base = logLik(null_glm)
+    D.base = -2 * L.base
+    n = dim(samDf)[1]
+    Nagelkerke = (1 - exp((D.full - D.base)/n))/(1 - exp(-D.base/n))
+    
+    
+    # A GLM of all weighted unifrac components
+    
+    
+    data.frame(
+        caps.P = capanova['Model', 'Pr(>F)'],
+        adonisP = medWuf$aov.tab[1, 'Pr(>F)'],
+        mir.P = mirkatP,
+        caps.F = capanova['Model', 'F'],
+        caps.R2 = medWufCap$CCA$tot.chi/medWufCap$tot.chi, 
+        wuf1.P = glmAnova['MDS1', 'Pr(>Chi)'],
+        wuf1.DR = glmAnova['MDS1', 'Deviance'] / glmAnova['NULL', 'Resid. Dev'],
+        wuf1.McFadden = Nagelkerke,
+        accuracy,
+        wuf1.coef = coef(loc_glm)[2]
+        #cap1.P = glmAnova['CAP1', 'Pr(>Chi)'],
+        #cap1.R2 = glmAnova['CAP1', 'Deviance'] / glmAnova['NULL', 'Resid. Dev']
+    )
+    }
+    
+```
+
+```{r}
+use.immune %>%
+filter(type == 'IgG' & antigen == 'gp41'& month == 0 & ct == 'T') -> test.immune1
+```
+
+```{r}
+# Just confirming that the function works before it goes in a giant loop. I'd delete this,
+# but i'll just end up needing it again if I do.
+ptm = proc.time()
+tps <- CapVar(test.immune1, nperm = 9999, transformation = medcode, family = 'binomial')
+proc.time() - ptm
+tps
+```
+
+```{r}
+use.immune %>%
+filter(type == 'CD4+' & month == 6.5 & ct == 'T') -> test.immune.pteg
+```
+
+```{r}
+# Just confirming that the function works before it goes in a giant loop. I'd delete this,
+# but i'll just end up needing it again if I do.
+ptm = proc.time()
+tps <- CapVar(test.immune.pteg, nperm = jnperm, transformation = medcode, family = 'binomial')
+proc.time() - ptm
+tps
+```
+
+```{r}
+# Run above function against every relevant variable.
+ptm <- proc.time()
+
+use.immune %>% 
+filter(ct == 'T') %>%
+group_by(type, antigen, month) %>%
+do(data.frame(CapVar(., nperm = jnperm))) -> permKernTable
+permKernTable
+
+proc.time() - ptm
+```
+
+The above function runs several extra tests. Results as follows:
+
+type antigen visitno - things we run over
+
+caps.P - Capscale test asks whether if we rotate things a bit and then try to use the best axis to compare to the data. Its similar to the wuf1.P value, but with some rotation
+
+adonisP - p-value for a permanova test. Similar to mirkat p-value. One key exception is that igg_gp41_Month_0 falls on different sides of the 0.05 threshold.
+
+mir.P is the p value for the kernel regression test, as run in the MiRKAT package. 
+(Zhao et al., 2015)
+
+caps.F and caps R2 are the f and r squared values for the capscale test.
+
+wuf.P - is the p value of a glm comparing weighted unifrac component one against variables of interest. This test appears to always be statistically significantly positive when the mirkat test is positve.
+
+wuf1.DR - one way of calculating an R2 value from a glm. We devide the deviance by the residual deviance
+
+wuf1.McFadden - is a McFadden's pseudo R^2. This turns out to be identical to the previous calculation.
+
+accuracy - the fraction of the time that the glm predicts something falls above or below the median correctly. This turns out to not be super informative. Everything has around a 60% accuracy.
+
+wuf1.coef - the coefficient of the glm model. The sign is relevant. Things with postive sign are associated with high values of weighted unifrac axis 1.
+
+```{r}
+# Clean up so we just see the results of the kernel regression 
+concisePermKernTable <- permKernTable %>% ungroup %>%
+mutate(Kernel_Q = p2q(mir.P), MDS1_Q = p2q(wuf1.P)) %>%
+dplyr::select(Type = type, Antigen = antigen,Month = month, Kernel_P = mir.P, Kernel_Q,
+              MDS1_P = wuf1.P, MDS1_Q, GlmMDS1_R2 = wuf1.McFadden, MDS1_Coef = wuf1.coef) %>%
+as.data.frame %>% 
+pass -> concisePermKernTable
+write.csv(format(concisePermKernTable, digits = 3), 'tables/concisePermkernTable.csv')
+```
+
+### Table 1
+
+```{r}
+# export conditionally formatted table as html
+
+colNames1 = c(' ' = 3, 'Kernel' = 2, 'MDS' = 4)
+colNames2 = c('Type', 'Antigen', 'Month', 'P', 'Q', 'P', 'Q', 'R2', 'Coef' )
+
+concisePermKernTable %>%
+mutate(
+    # this row needs to happen first, since the reformatting of the nother numbers makes them harder to call
+    MDS1_Coef = cell_spec(format(MDS1_Coef, digits = 3), "html",
+                           bold = ifelse(Kernel_P < 0.05, 
+                                         T,
+                                         F),
+                          italic = ifelse(Kernel_P < 0.05 & MDS1_Coef < 0,
+                                        T,
+                                         F),
+                          background = ifelse(Kernel_P < 0.05, ifelse(MDS1_Coef < 0, "lightsalmon", "lightblue"), "")
+                         ),
+    Kernel_P = cell_spec(format_round(Kernel_P, 3), "html",
+                                  bold = ifelse(Kernel_P < 0.05, T, F),
+                                  background = ifelse(Kernel_P < 0.05, 'yellow', '')
+                                 ),
+    Kernel_Q = cell_spec(format_round(Kernel_Q, 3), "html",
+                                  bold = ifelse(Kernel_Q < 0.2, T, F),
+                                  background = ifelse(Kernel_Q < 0.2, 'lightyellow', '')
+                                 ),
+     MDS1_P  = cell_spec(format_round(MDS1_P, 3), "html",
+                                  bold = ifelse(MDS1_P < 0.05, T, F),
+                                  background = ifelse(MDS1_P < 0.05, 'yellow', '')
+                                 ),
+    MDS1_Q = cell_spec(format_round(MDS1_Q, 3), "html",
+                                  bold = ifelse(MDS1_Q < 0.2, T, F),
+                                  background = ifelse(MDS1_Q < 0.2, 'lightyellow', '')
+                                 ),
+    #Month = cell_spec(format_round(Month,0), "html")
+    Month = cell_spec(Month, "html")
+
+    
+      ) %>%
+mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen)) -> toTable
+```
+
+```{r}
+
+toTable %>%
+
+kable("html", escape = F, digits = 3, align = 'c', col.names = colNames2) %>%
+kable_styling("striped", "hover", full_width = F) %>%
+add_header_above(colNames1) %>%
+collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTable.html
+
+concisePermKernTable.html
+
+concisePermKernTable.html %>% cat(file = 'tables/concisePermkernTable.html')
+```
+
+Latex version of the same table
+
+```{r}
+
+docHead <- "\\documentclass[12pt]{article} % use larger type; default would be 10pt
+
+\\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+\\usepackage{booktabs}
+\\usepackage{longtable}
+\\usepackage{array}
+\\usepackage{multirow}
+\\usepackage[table]{xcolor}
+\\usepackage{wrapfig}
+\\usepackage{float}
+\\usepackage{colortbl}
+\\usepackage{pdflscape}
+\\usepackage{tabu}
+\\usepackage{threeparttable}
+\\usepackage{threeparttablex}
+\\usepackage[normalem]{ulem}
+\\usepackage{makecell}
+
+\\definecolor{green}{rgb}{1, 1, .9}
+
+\\begin{document}
+"
+
+docTail <- "\\end{document}
+"
+```
+
+```{r}
+# Make latex table
+
+concisePermKernTable %>%
+mutate(
+    # this row needs to happen first, since the reformatting of the nother numbers makes them harder to call
+    MDS1_Coef = cell_spec(format(MDS1_Coef, digits = 3), "latex",
+                           bold = ifelse(MDS1_P < 0.05, 
+                                         T,
+                                         F),
+                          italic = ifelse(MDS1_P < 0.05 & MDS1_Coef < 0,
+                                        T,
+                                         F)),
+    Kernel_P = cell_spec(format_round(Kernel_P, 3), "latex",
+                                  bold = ifelse(Kernel_P < 0.05, T, F),
+                                  background = ifelse(Kernel_P < 0.05, 'yellow', 'white')
+                                 ),
+    Kernel_Q = cell_spec(format_round(Kernel_Q, 3), "latex",
+                                  bold = ifelse(Kernel_Q < 0.2, T, F),
+                                  background = ifelse(Kernel_Q < 0.2, 'green', 'white')
+                                 ),
+     MDS1_P  = cell_spec(format_round(MDS1_P, 3), "latex",
+                                  bold = ifelse(MDS1_P < 0.05, T, F),
+                                  background = ifelse(MDS1_P < 0.05, 'yellow', 'white')
+                                 ),
+    MDS1_Q = cell_spec(format_round(MDS1_Q, 3), "latex",
+                                  bold = ifelse(MDS1_Q < 0.2, T, F),
+                                  background = ifelse(MDS1_Q < 0.2, 'green', 'white')
+                                 ),
+    #Month = cell_spec(format_round(Month,0), "html")
+    Month = cell_spec(Month, "latex")
+
+    
+      ) %>%
+mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen)) -> toTable
+
+toTable %>% 
+kable("latex", escape = F, digits = 3, align = 'c', col.names = colNames2, booktabs = T) %>%
+kable_styling(position = "left") %>%
+
+add_header_above(colNames1) %>%
+collapse_rows(columns = 1:2, latex_hline = "full") %>%
+pass -> concisePermKernTable.tex
+```
+
+```{r}
+# Print latex table to tex file
+
+cat(docHead, concisePermKernTable.tex, docTail, file = 'tables/concisePermkernTable1.tex')
+```
+
+```{r}
+concisePermKernTable %>% filter(Kernel_P < 0.05) -> shortPermkernTable
+shortPermkernTable
+write.csv(format(shortPermkernTable, digits = 3), 'tables/shortPermkernTable.csv')
+```
+
+### Q-Q Plot
+
+Of kernel regression P values
+
+```{r}
+my_runif <- function(Len){
+    loc_runif <- runif(n = Len)
+    sort_loc_runif <- sort(loc_runif)
+    data.frame(case = 1:Len, relement = sort_loc_runif)
+}
+
+calc_bound <- function(df, bound){
+    quantile(df$relement, bound)
+}
+
+make_qqdata <- function(pvec, nboot = 10000){
+    locP <- pvec
+
+LP <- length(locP)
+#1:10 %>% map(runif, n = LP)
+sortedP <- sort(locP)
+exp2 <- 1:length(locP)/length(locP)
+sortedExpP <- sort(exp2)
+
+random_pvalues <- data.frame(iter = 1:nboot) %>%
+mutate(rand = map(iter, ~my_runif(Len = LP))) %>% unnest %>%
+nest(-case) %>%
+mutate(lb = map_dbl(data, ~calc_bound(., 0.025)),
+      ub = map_dbl(data, ~calc_bound(.,0.975))) %>% dplyr::select (-data)
+
+qqdata <- bind_cols(sortedP = sortedP, sortedExpP = sortedExpP, random_pvalues)
+
+return(qqdata)
+}
+```
+
+```{r}
+qqdata_permKernMir <- make_qqdata(permKernTable$mir.P)
+```
+
+```{r}
+qqdata_permKernMir %>% str
+```
+
+```{r}
+options(repr.plot.width=6, repr.plot.height= 6)
+qqdata_permKernMir %>% ggplot(aes(x = sortedExpP, y = sortedP)) + geom_point(shape = 1) + geom_abline(intercept = 0, slope = 1) + 
+labs(x = expression(paste("Expected ", italic("p"),"-value")), y = expression(paste("Observed ", italic("p"),"-value")))
+ggsave('figures/qq_permKernMir.png')
+```
+
+```{r}
+qqdata_permKernMir %>% ggplot(aes(x = sortedExpP, y = sortedP)) + geom_point(shape = 1) + geom_abline(intercept = 0, slope = 1) + geom_line(aes(y = lb), colour = "grey40") + geom_line(aes(y = ub), colour = "grey40") + scale_y_log10() + scale_x_log10()
+```
+
+We see from the qqplot that we generally fall below the 1:1 line, suggesting that our P values are lower than we would expect from chance.
+To make the grey lines, I sampled 95% confidence intervals of random draws from the uniform distribution (essentially random p values). The data points sometimes, but not always fall below the lower one of these. However, we care about all of the p values, not wheter eaach individual is more unusual than we would expect by chance. I'll replort just the regular qqplot as a supplemental figure.
+
+## As above, but this time with gaussian - continuous dependent variables
+
+```{r}
+ptm = proc.time()
+tps <- CapVar(test.immune1, nperm = 9999, transformation = function(x){jac_box_cox_2(x)}, family = 'gaussian')
+proc.time() - ptm
+tps
+```
+
+```{r}
+# Run above function against every relevant variable.
+ptm <- proc.time()
+
+use.immune %>%
+filter(ct == 'T') %>%
+group_by(type, antigen, month) %>%
+do(data.frame(CapVar(., nperm = jnperm,
+                     transformation = function(x){jac_box_cox_2(x)},
+                     family = 'gaussian'))) -> permKernTableGaus
+permKernTableGaus
+
+proc.time() - ptm
+```
+
+```{r}
+# Clean up so we just see the results of the kernel regression 
+concisePermKernTableGaus <- permKernTableGaus %>% ungroup %>%
+mutate(Kernel_Q = p2q(mir.P), MDS1_Q = p2q(wuf1.P)) %>%
+dplyr::select(Type = type, Antigen = antigen, Month = month, Kernel_P = mir.P, Kernel_Q,
+              MDS1_P = wuf1.P, MDS1_Q, MDS1_R2 = wuf1.McFadden, MDS1_Coef = wuf1.coef) %>%
+as.data.frame %>% 
+pass 
+
+concisePermKernTableGaus
+
+write.csv(format(concisePermKernTableGaus, digits = 3), 'tables/concisePermkernTableGaus.csv')
+```
+
+### Table S1
+
+```{r}
+# export conditionally formatted table as html
+concisePermKernTableGaus %>%
+mutate(
+    # this row needs to happen first, since the reformatting of the nother numbers makes them harder to call
+       MDS1_Coef = cell_spec(format_round(MDS1_Coef, digits = 3), "html",
+                           bold = ifelse(Kernel_P < 0.05, 
+                                         T,
+                                         F),
+                          italic = ifelse(Kernel_P < 0.05 & MDS1_Coef < 0,
+                                        T,
+                                         F),
+                          background = ifelse(Kernel_P < 0.05, ifelse(MDS1_Coef < 0, "lightsalmon", "lightblue"), "")
+                         ),
+    Kernel_P = cell_spec(format_round(Kernel_P, 3), "html",
+                                  bold = ifelse(Kernel_P < 0.05, T, F),
+                                  background = ifelse(Kernel_P < 0.05, 'yellow', '')
+                                 ),
+    Kernel_Q = cell_spec(format_round(Kernel_Q, 3), "html",
+                                  bold = ifelse(Kernel_Q < 0.2, T, F),
+                                  background = ifelse(Kernel_Q < 0.2, 'lightyellow', '')
+                                 ),
+     MDS1_P  = cell_spec(format_round(MDS1_P, 3), "html",
+                                  bold = ifelse(MDS1_P < 0.05, T, F),
+                                  background = ifelse(MDS1_P < 0.05, 'yellow', '')
+                                 ),
+    MDS1_Q = cell_spec(format_round(MDS1_Q, 3), "html",
+                                  bold = ifelse(MDS1_Q < 0.2, T, F),
+                                  background = ifelse(MDS1_Q < 0.2, 'lightyellow', '')
+                                 ),
+    Month = cell_spec(Month, "html")
+
+    
+      ) %>%
+
+mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen)) -> toTable
+
+toTable %>%
+
+kable("html", escape = F, digits = 3, align = 'c', col.names = colNames2) %>%
+kable_styling("striped", "hover", full_width = F) %>%
+add_header_above(colNames1) %>%
+collapse_rows(columns = 1:2, latex_hline = "full") -> concisePermKernTableGaus.html
+
+concisePermKernTableGaus.html
+
+concisePermKernTableGaus.html %>% cat(file = 'tables/concisePermkernTableGaus.html')
+```
+
+```{r}
+concisePermKernTableGaus %>% filter(Kernel_P < 0.05) -> shortPermkernTableGaus
+shortPermkernTableGaus
+write.csv(format(shortPermkernTableGaus, digits = 3), 'tables/shortPermkernTable.csv')
+```
+
+```{r}
+# Make latex table
+
+concisePermKernTableGaus %>%
+mutate(
+    # this row needs to happen first, since the reformatting of the nother numbers makes them harder to call
+    MDS1_Coef = cell_spec(format(MDS1_Coef, digits = 3), "html",
+                           bold = ifelse(Kernel_P < 0.05, 
+                                         T,
+                                         F),
+                          italic = ifelse(Kernel_P < 0.05 & MDS1_Coef < 0,
+                                        T,
+                                         F),
+                          background = ifelse(Kernel_P < 0.05, ifelse(MDS1_Coef < 0, "lightsalmon", "lightblue"), "")
+                         ),
+    Kernel_P = cell_spec(format_round(Kernel_P, 3), "latex",
+                                  bold = ifelse(Kernel_P < 0.05, T, F),
+                                  background = ifelse(Kernel_P < 0.05, 'yellow', 'white')
+                                 ),
+    Kernel_Q = cell_spec(format_round(Kernel_Q, 3), "latex",
+                                  bold = ifelse(Kernel_Q < 0.2, T, F),
+                                  background = ifelse(Kernel_Q < 0.2, 'green', 'white')
+                                 ),
+     MDS1_P  = cell_spec(format_round(MDS1_P, 3), "latex",
+                                  bold = ifelse(MDS1_P < 0.05, T, F),
+                                  background = ifelse(MDS1_P < 0.05, 'yellow', 'white')
+                                 ),
+    MDS1_Q = cell_spec(format_round(MDS1_Q, 3), "latex",
+                                  bold = ifelse(MDS1_Q < 0.2, T, F),
+                                  background = ifelse(MDS1_Q < 0.2, 'green', 'white')
+                                 ),
+    #Month = cell_spec(format_round(Month,0), "html")
+    Month = cell_spec(Month, "latex")
+
+    
+      ) %>%
+mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen)) -> toTable
+
+toTable %>% 
+kable("latex", escape = F, digits = 3, align = 'c', col.names = colNames2, booktabs = T) %>%
+kable_styling(position = "left") %>%
+
+add_header_above(colNames1) %>%
+collapse_rows(columns = 1:2, latex_hline = "full") %>%
+pass -> concisePermKernTableGaus.tex
+```
+
+```{r}
+# Print latex table to tex file
+
+cat(docHead, concisePermKernTableGaus.tex, docTail, file = 'tables/concisePermkernTableGaus.tex')
+```
+
+```{r}
+### QQplot for kernel regression data
+```
+
+```{r}
+qqdata_permKernMirGaus <- make_qqdata(permKernTableGaus$mir.P)
+```
+
+```{r}
+options(repr.plot.width=6, repr.plot.height= 6)
+qqdata_permKernMirGaus %>% ggplot(aes(x = sortedExpP, y = sortedP)) + geom_point(shape = 1) + geom_abline(intercept = 0, slope = 1) + 
+labs(x = expression(paste("Expected ", italic("p"),"-value")), y = expression(paste("Observed ", italic("p"),"-value")))
+ggsave('figures/qq_permKernMirGaus.png')
+```
+
+## Chi Squared test for statistical associations between each pair of immune variables
+
+```{r}
+use.immune %>% dplyr::select(pub_id, visitno, type, antigen, mag) -> tmp
+full_join(tmp, tmp, by = 'pub_id') %>% 
+group_by(visitno.x, type.x, antigen.x, visitno.y, type.y, antigen.y) %>%
+nest %>%
+mutate(x2 = map(data, function(df){unwarn(chisq.test(df$mag.x, df$mag.y))})) %>%
+mutate(glance = map(x2, glance)) %>%
+dplyr::select(-data, -x2) %>%
+unnest(glance) %>%
+#mutate(q.value = p2q(p.value)) %>% # reurns NaNs
+pass -> compareImmuneX2
+```
+
+```{r}
+compareImmuneX2 %>% filter(
+    type.x == 'IgG' &
+    antigen.x == 'gp41' &
+    type.y == 'IgG' &
+    antigen.y == 'gp41'
+)
+```
+
+```{r}
+compareImmuneX2 %>%
+filter(type.x == 'IgG' & type.y == 'IgG' & antigen.x != antigen.y) %>%
+write_csv('tables/chisq_IgG_comparasons.csv')
+```
+
+# MDS GLM for each other MDS Axis
+
+```{r}
+psN2 %>% phylo_join(scores(psN2.pcoa, display = "sites", choices = 1:10) %>%
+                    as.data.frame %>% rownames_to_column, by = 'rowname') %>%
+sample_data %>% as('data.frame') %>% rownames_to_column -> hereSam
+```
+
+```{r}
+data_frame(formula = paste("transformation(ydata) ~ MDS", 1:10, sep = ""))
+```
+
+```{r}
+EachMDS <- function(x, nperm = 9999, transformation = medcode2, family = 'binomial'){
+    ## Pull out the needed data
+    
+    psN2.wMDS <- psN2 %>% phylo_join(scores(psN2.pcoa, display = "sites", choices = 1:10) %>%
+                    as.data.frame %>% rownames_to_column, by = 'rowname')
+    
+#     medWuf <- NA
+#     rankWuf <- NA
+    locPS <- phylo_join(psN2.wMDS, x, by = 'pub_id') 
+    ydata0 <- sample_data(locPS)$mag
+    yna <- is.na(ydata0)
+    #loc.wuf <- wufKN2
+    #loc.jsd <- jsdKN2
+    ydata <- ydata0
+    
+    ydata <- ydata0[!yna]
+    loc.wuf2 <- psN2.wuf %>% as.matrix %>% .[!yna, !yna]
+    
+     samDf <- locPS %>% sample_data %>% as('data.frame') %>% rownames_to_column %>%
+    .[!yna,]
+
+#     # Is giving only positive results with CAP1, not sure why
+    loc_glm <- glm(as.formula("transformation(ydata) ~  MDS1"), data = samDf, family = family)
+    glmAnova <- loc_glm %>% anova(test = "Chisq")
+    
+    # data_frame, rather than data.frame
+    # https://stackoverflow.com/questions/48450308/iterating-over-formulas-in-purrr#48450308
+    data_frame(formulaString = paste("transformation(ydata) ~ MDS", 1:10, sep = "")) %>%
+     mutate(model = map(formulaString, function(fs){
+         glm(as.formula(fs), data = samDf, family = family)})) %>%
+    mutate(anova = map(model, anova)) %>%
+    mutate(glance = map(model, glance)) %>%
+    mutate(tidy = map(model, tidy)) %>%
+    mutate(coef = map(model, ~ coef(summary(.))[2,])) %>%
+    pass -> allmodels
+
+    allmodels %>% dplyr::select("tidy") %>% unnest %>% filter(term != '(Intercept)')
+    
+ 
+    }
+    
+```
+
+```{r}
+# Just confirming that the function works before it goes in a giant loop. I'd delete this,
+# but i'll just end up needing it again if I do.
+ptm = proc.time()
+tps <- EachMDS(test.immune.pteg, nperm = 9999, transformation = medcode, family = 'binomial')
+proc.time() - ptm
+```
+
+```{r}
+tps
+```
+
+```{r}
+use.immune %>%
+group_by(type, antigen, month) %>%
+nest %>%
+mutate(coefs = map(data, ~ EachMDS(.))) %>%
+dplyr::select(-data) %>% unnest(coefs) -> glmMDScoefs
+```
+
+```{r}
+ants1
+```
+
+```{r}
+glmMDScoefs %>%
+gather(key = "key", value = "value", estimate:p.value) %>%
+filter(key == "p.value") %>%
+spread(key = term, value = value) %>%
+dplyr::select(-key, -MDS10, MDS10) %>%
+dplyr::rename(Type = type, Antigen = antigen, Month = month) %>%
+mutate(Type = factor(Type, levels = c( "IgA", "IgG",  "CD4+"))) %>%
+mutate(Antigen = factor(Antigen, levels = c(ants1, ants2, "ANY.ENV.PTEG"))) %>%
+#Clean up labels
+mutate(Antigen = stringr::str_replace_all(Antigen, "_", " ")) %>%
+mutate(Antigen = stringr::str_replace_all(Antigen, "V1 V2", "V1-V2")) %>%
+mutate(Antigen = stringr::str_replace_all(Antigen, "ANY.ENV.PTEG", "Any ENV PTEG")) %>%
+arrange(Type) -> allMDS
+allMDS
+```
+
+### Table S2
+
+```{r}
+allMDS %>%
+kable("html", escape = F, digits = 3, align = 'c') %>%
+collapse_rows(columns = 1:2, latex_hline = "full") %>%
+as.character() -> allMDS.html
+
+allMDS %>%
+kable("html", escape = F, digits = 3, align = 'c') %>%
+collapse_rows(columns = 1:2, latex_hline = "full")
+
+
+allMDS.html
+
+allMDS.html %>% cat(file = 'tables/allMDS.html')
+```
+
+```{r}
+allMDS %>%
+kable("latex", escape = F, digits = 3, align = 'c', booktabs = T) %>%
+collapse_rows(columns = 1:2, latex_hline = "full") %>%
+pass -> allMDS.latex
+
+
+allMDS.latex %>% cat(file = 'tables/allMDS.tex')
+```
+
+```{r}
+# Print latex table to tex file
+cat(docHead, allMDS.latex, docTail, file = 'tables/allMDS.tex')
+```
+
+```{r}
+write_csv(allMDS, 'tables/allMDSGlmPValues.csv')
+```
+
+# Jensen Shannon Kernel Regression
+at each taxonomic level
+
+## Agglomeration
+
+```{r}
+# How many taxa do we see if we agglomerate at different levels
+psN2 %>% tax_table %>% as.data.frame %>% dplyr::select(Phylum:Genus) %>% colnames -> taxLevels
+
+data_frame(taxLevels) %>%
+mutate(ntaxa = map(taxLevels,
+    function(lev){
+        psN2 %>% tax_glom(lev) %>% ntaxa
+    }
+                                             )) %>%
+mutate(ntaxa = unlist(ntaxa)) %>%
+pass -> NTaxaAtLevel
+NTaxaAtLevel
+```
+
+```{r}
+data_frame(taxLevels = "Species", ntaxa = ntaxa(psN2), ps = list((psN2))) -> specRow
+data_frame(taxLevels = "Species", ntaxa = ntaxa(psN1), psCount = list((psN1))) -> specRowC
+```
+
+```{r}
+D2K_savename <- function(distmat){
+    # cascade names forward with the D2K operation
+    require(MiRKAT)
+    out <- MiRKAT::D2K(distmat)
+    colnames(out) <- colnames(distmat)
+    rownames(out) <- rownames(distmat)
+    out
+}
+```
+
+```{r}
+# Data frame of phyloseq objects distances and kernels at a bunch of taxonomic levels
+NTaxaAtLevel %>%
+mutate(ps = map(ntaxa, ~tip_glom_saveid(psN2, k = .))) %>%
+# process the phyloseq objects so they have better names
+mutate(ps = map(ps, ~swap.phyloseq.taxnames(tag_phyloseq(remove_tag_phyloseq(.)), oldname = 'oldname2'))) %>%
+# add in the species data row (which should already have correct names)
+bind_rows(specRow) %>%
+# calculate jensen-shannon distance matrix
+mutate(jsd = map(ps, ~phyloseq::distance(., method = "jsd") )) %>%
+# convert to 2d matrix
+mutate(jsdMat = map(jsd, ~as.matrix(.))) %>%
+# calculate kernel
+mutate(kjsd = map(jsdMat, ~D2K_savename(.))) -> tmp
+
+tmp %>%
+mutate(psNoZero = map(ps, ~transform_sample_counts(., function(x) x+(1/1000)))) -> tmp
+
+tmp %>%
+## chemometrics::clr just works, while compositions::clr throws a criptic error message here
+mutate(clr = map(psNoZero, ~ transform_otu_table(., chemometrics::clr))) %>%
+#mutate(clr = map(psNoZero, ~ transform_otu_table(., function(x) as.matrix(compositions::clr(x))))) %>%
+pass -> psDf0 # Original way
+```
+
+```{r}
+# Data frame of phyloseq objects distances and kernels at a bunch of taxonomic levels
+# I use psN1 because I need count data for some downstream steps.
+NTaxaAtLevel %>%
+mutate(psCount = map(ntaxa, ~tip_glom_saveid(psN1, k = .))) %>%
+# process the phyloseq objects so they have better names
+mutate(psCount = map(psCount, ~swap.phyloseq.taxnames(tag_phyloseq(remove_tag_phyloseq(.)), oldname = 'oldname2'))) %>%
+# add in the species data row (which should already have correct names)
+bind_rows(specRowC) %>%
+pass -> tmp
+```
+
+```{r}
+tmp %>%
+# calculate jensen-shannon distance matrix
+mutate(ps = map(psCount, ~transform_sample_counts(., function(x) {x/sum(x)}))) %>%
+mutate(jsd = map(ps, ~phyloseq::distance(., method = "jsd") )) %>%
+# convert to 2d matrix
+mutate(jsdMat = map(jsd, ~as.matrix(.))) %>%
+# calculate kernel
+mutate(kjsd = map(jsdMat, ~D2K_savename(.))) -> tmp
+
+tmp %>%
+mutate(psNoZero = map(ps, ~transform_sample_counts(., function(x) x+(1/1000)))) %>%
+## chemometrics::clr just works, while compositions::clr throws a criptic error message here
+mutate(clr = map(psNoZero, ~ transform_otu_table(., chemometrics::clr))) %>%
+#mutate(clr = map(psNoZero, ~ transform_otu_table(., function(x) as.matrix(compositions::clr(x))))) %>%
+pass -> psDf
+```
+
+```{r}
+print(psDf)
+```
+
+```{r}
+MirMulti <- function(x, KsDf = psDf, ps = psN2, nperm = 9999){
+    
+    Ks = KsDf$kjsd
+    
+    # I  bind to the phyloseq object and then peel off again later to guerentee
+    # that the y-data is in the same order as the Ks
+    locPS <- phylo_join(ps, x, by = 'pub_id')
+    
+    ydata0 <- sample_data(locPS)$mag
+    yna <- is.na(ydata0)
+
+    ydata <- ydata0[!yna]
+    loc.Ks <- lapply(Ks, function(K){K[!yna, !yna]})  
+  
+    bcxJSD <- MiRKAT(y = jac_box_cox_2(ydata), Ks = loc.Ks, out_type = "C", method = 'permutation', nperm = nperm)
+    medJSD <- MiRKAT(y = medcode(ydata), Ks = loc.Ks, out_type = "D", method = 'permutation', nperm = nperm)
+    mmDf = data.frame(
+        taxLevels = KsDf$taxLevels,
+        ntaxa = KsDf$ntaxa,
+        bcxJSD = bcxJSD$indivP, medJSD = medJSD$indivP,
+        bcxJSDOmni = bcxJSD$omnibus_p, medJSDOmni = medJSD$omnibus_p)
+    mmDf
+    
+    }
+```
+
+```{r}
+# Test case
+
+use.immune %>%
+filter(type == 'IgG' & antigen == 'gp41'& visitno == 2 & ct == 'T') -> test.immune1
+
+test.mm <- MirMulti(test.immune1, Ks = psDf, nperm = 999)
+
+test.mm
+```
+
+```{r}
+ptm = proc.time()
+
+use.immune %>%
+group_by(type, antigen, month) %>%
+nest %>%
+mutate(mir = map(data,
+    ~MirMulti(., Ks = psDf, ps = psN2, nperm = 999)
+)) %>%
+dplyr::select(-data) %>% unnest(mir) %>%
+pass -> mirLevels
+
+proc.time() - ptm
+```
+
+```{r}
+mirLevels %>% dplyr::select(-ntaxa, -medJSD) %>% spread(key = taxLevels, value = bcxJSD)
+```
+
+```{r}
+mirLevels %>% dplyr::select(-ntaxa, -bcxJSD) %>% spread(key = taxLevels, value = medJSD)
+```
+
+I'd like to combine the above into one table, when it isn't 7:45.
+Probably has soemething to do with merging columns or something.
+Or maybe I just want to plot it as a figure.
+
+```{r}
+mirLevels %>%
+gather(metric, P, bcxJSD:medJSD) -> mirDat
+```
+
+```{r}
+mirDat %>% dplyr::select(type:month, bcxJSD = bcxJSDOmni, medJSD = medJSDOmni) %>%
+group_by(type, antigen, month) %>%
+summarize(bcxJSD = mean(bcxJSD), medJSD = mean(medJSD)) %>%
+gather(metric, P, bcxJSD, medJSD) -> mirOmni
+```
+
+```{r}
+mirOmni
+```
+
+```{r}
+NTaxaAtLevel %>% bind_rows(specRow[,1:2]) %>% unite(nLev, taxLevels, ntaxa, remove = FALSE) -> NTaxaAtLevel2
+NTaxaAtLevel2
+```
+
+```{r}
+bind_rows(
+    permKernTable %>% mutate(metric = 'med'),
+    permKernTableGaus %>% mutate(metric = 'bcx')
+    ) %>%
+dplyr::select(type, antigen, month, metric, mir.P) %>%
+pass -> WufPData
+```
+
+```{r}
+fixant <- function(df){
+    df %>%
+    mutate(antigen = stringr::str_replace_all(antigen, "\\.", " ")) %>%
+    mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+    #mutate(metric =  stringr::str_replace_all(metric, "bcx", "")) %>%
+    pass
+}
+
+fixstuff <- function(df){
+    df %>%
+    fixant %>%
+    mutate(metric =  stringr::str_replace_all(metric, "JSD", "")) %>%
+    pass
+}
+```
+
+```{r}
+mirDat %>% fixant %>% head
+```
+
+```{r}
+mirDat %>% 
+#mutate(antigen = stringr::str_replace_all(antigen, "\\.", " ")) %>% 
+fixstuff %>%
+ggplot(aes(x = ntaxa, y = P, col = factor(month), fill = factor(month))) +
+geom_point(pch = 21) +
+facet_grid(type + antigen ~ metric, labeller = labeller(antigen = label_wrap_gen(width = 10))) + 
+scale_x_log10(breaks = c(3, NTaxaAtLevel2$ntaxa, 1000), labels = c("omni", NTaxaAtLevel2$nLev, "wunifrac")) +
+scale_y_log10(breaks = c(0.002, 0.01, 0.05, 0.2, 1)) + 
+geom_hline(yintercept=0.05, col = 'blue', alpha = 0.5) + geom_hline(yintercept=0.01, col = 'red', alpha = 0.5) +
+#geom_hline(data = mirOmni, aes(yintercept = P, col = factor(month))) +
+#annotation_logticks(sides = 'bl') +
+#geom_rug(data = mirOmni, aes(y = P, col = factor(month)), inherit.aes = F) +
+geom_point(data = mirOmni %>% ungroup %>% fixstuff,
+           aes(x = 3, y = P, col = factor(month), fill = factor(month)), inherit.aes = F, pch = 22, size = 2) +
+geom_point(data = WufPData %>% ungroup %>% fixant,
+           aes(x = 1000, y = mir.P, col = factor(month), fill = factor(month)), inherit.aes = F, pch = 24, size = 2) +
+
+scale_colour_manual(values=cbPalette) + 
+scale_fill_manual(values=alpha(cbPalette, 0.5)) + 
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) -> pjsd0
+
+options(repr.plot.width=8, repr.plot.height= 6)
+pjsd0
+options(par0)
+# I'd like to add weighted unifrac as a tick mark on the right.
+```
+
+```{r}
+NTaxaAtLevel2
+```
+
+```{r}
+# New combined data frame that has omnibus, regular, and wunifrac all in one
+bind_rows(
+     mirDat %>% mutate(metric =  stringr::str_replace_all(metric, "JSD", "")) %>%
+    mutate(test = "JSD"),
+     mirOmni %>% ungroup %>% mutate(metric =  stringr::str_replace_all(metric, "JSD", "")) %>%
+    mutate(taxLevels = "Omnibus") %>% mutate(test = "Omnibus"),
+     WufPData %>% ungroup %>% dplyr::rename(P = mir.P) %>%
+    mutate(taxLevels = "WUnifrac") %>% mutate(test = "WUnifrac")
+) %>% 
+mutate(antigen = factor(antigen, levels = c(ants2, ants1, "ANY.ENV.PTEG"))) %>%
+mutate(type = factor(type, levels = c("IgA", "IgG", "CD4+"))) %>%
+mutate(taxLevels = factor(taxLevels, levels = c("Omnibus", NTaxaAtLevel2$taxLevels, "WUnifrac"))) %>%
+dplyr::select(-c(bcxJSDOmni:medJSDOmni))%>%
+unite(nLev, taxLevels, ntaxa, remove = FALSE) %>%
+mutate(nLev = stringr::str_replace(nLev, "_NA", "")) %>%
+#mutate(antigen = stringr::str_replace_all(antigen, "\\.", " ")) %>%
+#mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+ mutate(antigen = factor(antigen, labels = stringr::str_replace_all(levels(antigen), "\\.", " "))) %>%
+ mutate(antigen = factor(antigen, labels = stringr::str_replace_all(levels(antigen), "_", " "))) %>%
+
+
+# mutate(antigen = factor(antigen, labels = (levels(antigen)))) %>%
+# mutate(antigen = factor(antigen, labels = (levels(antigen)))) %>%
+
+mutate(test = factor(test, levels = c('Omnibus', 'JSD', 'WUnifrac'))) %>%
+pass -> mirDat2
+mirDat2 %>% filter(type == 'CD4+')
+```
+
+```{r}
+mirDat2 %>% head
+```
+
+```{r}
+mirDat2 %>%
+filter(type == "IgG") %>%
+ggplot(aes(x = taxLevels, y = P, col = factor(month), fill = factor(month), shape = test)) +
+geom_point(size = 2) +
+facet_grid(type + antigen ~ metric, labeller = labeller(antigen = label_wrap_gen(width = 10))) + 
+#scale_x_log10(breaks = c(3, NTaxaAtLevel2$ntaxa, 1000), labels = c("omni", NTaxaAtLevel2$nLev, "wunifrac")) +
+scale_y_log10(breaks = c(0.002, 0.01, 0.05, 0.2, 1)) + 
+geom_hline(yintercept=0.05, col = 'blue', alpha = 0.5) + geom_hline(yintercept=0.01, col = 'red', alpha = 0.5) +
+
+scale_shape_manual(values = c(22, 21, 24)) +
+scale_colour_manual(values=cbPalette) + 
+scale_fill_manual(values=alpha(cbPalette, 0.5)) + 
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) -> pjsd
+
+
+options(repr.plot.width=6, repr.plot.height= 8)
+pjsd
+
+ggsave('figures/KernelPVsLevel.png', width = 6, height = 8)
+options(par0)
+```
+
+X-axis is now spaced evenly
+
+Table SX. P values of kernel regression tests. Circles indicate jensen shannon values at different taxonomic resolutions. Squares are the omnibus p-value for that cohort of tests. Triangles indicate kernel regression p-values for the corresponding weighted unifrac test.
+
+The blue and red lines indicate p values of 5% and 1% respectively.
+
+Observations: The weighted unifrac test is sensitive. In cases where only one taxonic level hits, weighted unifrac often also falls at some statistically significant value. The omnibus p value is often higher than the weighted unifrac one.
+Weighted unifrac seems like a good test for identifying patterns at any level that relate to an outcome. The jensen shannon informs us about which level the pattern is observed.
+
+# Local Tests
+
+## Family, genera and species vs wuf1
+I might even be able to drill down to every level.
+
+```{r}
+model_each_species <- function(ps, f, pthresh = 1, q = FALSE){
+    # Start with the otu table
+ps %>%
+# reshape it so we have clr values for every taxon-sample pair
+otu_table %>% as.data.frame %>% rownames_to_column("Sample") %>% gather(Taxon, clr, -Sample) %>%
+    # bind that to the sample data
+    # doing this here seems remarkably inefficient, but its not creating a bottleneck so I'll leave it.
+left_join(
+    ps %>%
+    # the sample data need to have MDS1 and MDS2 appended to them
+    phylo_join(
+    psN2.pcoa %>% scores(display = "sites") %>% # hardcoded psN2.pcoa
+        as.data.frame %>% 
+        rownames_to_column %>% 
+        dplyr::select('rowname', 'MDS1', 'MDS2'),
+    by = 'rowname'
+) %>%
+    # back to binding to sample data
+    sample_data %>% as('data.frame') %>% rownames_to_column("Sample"),
+     by = 'Sample') %>%
+
+group_by(Taxon) %>%  # group and nest for model run
+nest %>%
+mutate(Mod = map(data, f)) %>% # apply model over each species
+mutate(Glance = map(Mod, glance), Tidy = map(Mod, tidy)) %>% # extract relevant data from model
+# view model
+dplyr::select(Taxon, Tidy) %>% unnest %>%
+mutate(term = gsub('[\\( \\)]','', term)) %>% # remove parentheses from "(Intercept)"
+gather(meas, val, estimate:p.value) %>% 
+unite(meas, term, meas) %>% spread(meas, val) %>% arrange(clr_estimate) %>% 
+dplyr::select(Taxon, Intercept_estimate, clr_estimate, clr_std.error, clr_p.value) %>%
+    # add q value
+    {if(q) mutate(., clr_q.value = p2q(clr_p.value)) else .} %>%
+    
+ filter(clr_p.value < pthresh) %>%
+
+     #Join taxonomy information
+     left_join(
+     as.data.frame(ps@tax_table@.Data) %>% as.tibble %>% dplyr::select(Kingdom:Genus, Species, tag) %>%
+         mutate(tag = as.character(tag)), # mutate so tag is and taxon are both character class
+     by = c("Taxon" = "tag")) %>%
+pass
+ }
+```
+
+```{r}
+model_each_species_for_antigen <- function(antigen, ps = psN2){
+    ps %>%
+    model_each_species(function(df){glm(medcode2(get(antigen)) ~ clr, data = df, family = 'binomial')}, q = TRUE, pthresh = 1)
+}
+```
+
+```{r}
+ColsToRun <- c('IgG_Con.6.gp120.B_Month_6.5', 'IgG_Con.6.gp120.B_Month_12', 'IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_gp70_B.CaseA_V1_V2_Month_12', 'IgG_ZM96.gp140_Month_6.5', 'MDS1', 'isMale' ) 
+
+```
+
+```{r}
+model_each_species_case <- function(ps){
+    
+    ps %>% model_each_species(function(df){glm(MDS1 ~ clr, data = df, family = 'gaussian')}, q = TRUE, pthresh = 1) %>%
+arrange(clr_estimate) %>%
+mutate(Taxon = factor(Taxon, levels = Taxon[order(clr_estimate)])) %>%
+    mutate(test = 'gaussian', antigen = 'MDS1') %>%
+pass -> loc_mds1Glms
+    
+        ps %>% model_each_species(function(df){glm(log10(IgG_Con.6.gp120.B_Month_12 + 100) ~ clr, data = df, family = 'gaussian')}, q = TRUE, pthresh = 1) %>%
+arrange(clr_estimate) %>%
+ mutate(Taxon = factor(Taxon, levels = levels(loc_mds1Glms$Taxon))) %>%
+    mutate(test = 'gaussian', antigen = 'Con.6.gp120.B_Month_12') %>%
+ pass -> loc_gp120Glms
+    
+      tibble(antigen = ColsToRun) %>% mutate(model = map(antigen, ~model_each_species_for_antigen(., ps = ps))) %>%
+  unnest %>% mutate(Taxon = factor(Taxon, levels = levels(loc_mds1Glms$Taxon))) %>%
+        mutate(test = 'binomial') %>%
+    pass-> loc_logitCoefs
+    
+
+    #list(loc_mds1Glms, loc_gp120Glms, loc_logitCoefs)
+     bind_rows(loc_mds1Glms, loc_gp120Glms, loc_logitCoefs) %>% dplyr::select(test, antigen, everything())
+    
+}
+```
+
+```{r}
+#psDf %>% mutate(ps2 = map(ps, ~swap.phyloseq.taxnames(tag_phyloseq(remove_tag_phyloseq(.))))) -> test
+```
+
+```{r}
+#psDf[[1,"clr"]] %>% tax_table
+```
+
+```{r}
+psDf[[1]]
+```
+
+```{r}
+psDf %>% print
+```
+
+```{r}
+ptm = proc.time()
+psDf %>% dplyr::select(taxLevels, ntaxa, clr) %>% mutate(localmod = map(clr, model_each_species_case)) ->psDfLoc
+proc.time() - ptm
+```
+
+```{r}
+print(psDfLoc)
+```
+
+```{r}
+psDfLoc %>% dplyr::select(-clr) %>% unnest(localmod) -> tmp
+```
+
+```{r}
+psDfLoc$taxLevels
+```
+
+```{r}
+tmp %>% mutate(taxLevels = factor(taxLevels, levels = psDfLoc$taxLevels)) -> LocalTests
+```
+
+```{r}
+LocalTests %>% 
+filter(antigen != "MDS1") %>%
+write_csv("tables/AllLocalTests.csv")
+```
+
+## I want to show the local tests vs antibodies.
+
+```{r}
+LocalTests %>% head
+```
+
+```{r}
+options(repr.plot.width=6, repr.plot.height=8)
+LocalTests %>% 
+filter(antigen != "MDS1") %>%
+#Clean up labels
+mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " Month", " -- Month")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " IgG ", "")) %>%
+ggplot(aes(x = factor(taxLevels), y = clr_q.value)) + geom_point(size = 0.1) +
+geom_hline(yintercept = 0.2, color = 'grey') +
+ geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
+facet_wrap(~antigen + test) + scale_y_log10() +
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+ggsave('figures/LocalQEveryLevel.png')
+```
+
+```{r}
+options(repr.plot.width=6, repr.plot.height=8)
+LocalTests %>% 
+filter(antigen != "MDS1") %>%
+#Clean up labels
+mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " Month", " -- Month")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " IgG ", "")) %>%
+ggplot(aes(x = factor(taxLevels), y = clr_p.value)) + geom_point(size = 0.1) +
+geom_hline(yintercept = 0.2, color = 'grey') +
+ geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
+facet_wrap(~antigen + test) +# scale_y_log10() +
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+ggsave('figures/LocalPEveryLevel.png')
+```
+
+```{r}
+options(repr.plot.width=6, repr.plot.height=8)
+LocalTests %>% 
+filter(antigen != "MDS1") %>%
+#Clean up labels
+mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " Month", " -- Month")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " IgG ", "")) %>%
+ggplot(aes(x = factor(taxLevels), y = clr_p.value)) + geom_point(size = 0.1) +
+geom_hline(yintercept = 0.2, color = 'grey') +
+ geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
+facet_wrap(~antigen + test) + scale_y_log10() +
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+ggsave('figures/LocalPEveryLevel_LogScale.png')
+```
+
+```{r}
+order_taxa_by_mds1 <- function(df){
+    # this has to be a model_each_species type of data frame
+    df %>% filter(antigen == 'MDS1' & test == 'gaussian') %>%
+    mutate(TaxonF = factor(Taxon, levels = Taxon[order(clr_estimate)])) -> mds1df
+    df %>% mutate(TaxonF = factor(Taxon, levels = levels(mds1df$TaxonF)))
+}
+```
+
+To my annoyance, everything is labeled with IgG except gp120_12
+
+```{r}
+LocalTests %>%
+filter(taxLevels == 'Family') %>%
+order_taxa_by_mds1 %>%
+
+filter(
+    (antigen %in% c('IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_Con.6.gp120.B_Month_6.5'))|
+    (antigen == 'Con.6.gp120.B_Month_12' & test == 'gaussian')
+      ) %>%
+mutate(antigen = factor(antigen,
+                        levels = c('IgG_gp41_Month_0', 'IgG_gp41_Month_6.5',
+                                   'IgG_Con.6.gp120.B_Month_6.5', 'Con.6.gp120.B_Month_12'))) %>%
+filter(clr_p.value < 0.05 & clr_q.value < 0.2) %>%
+dplyr::select(antigen:clr_estimate) %>%
+dplyr::select(-Intercept_estimate) %>%
+mutate(cordir = sign(clr_estimate)) %>%
+pass
+```
+
+```{r}
+LocalTests %>% pull(antigen) %>% unique
+```
+
+```{r}
+# Family Hits
+LocalTests %>%
+filter(taxLevels == 'Family') %>%
+order_taxa_by_mds1 %>%
+
+filter(
+    (antigen %in% c('IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_Con.6.gp120.B_Month_6.5', 
+                    'IgG_ZM96.gp140_Month_6.5','IgG_gp70_B.CaseA_V1_V2_Month_12'))|
+    (antigen == 'Con.6.gp120.B_Month_12' & test == 'gaussian')
+      ) %>%
+mutate(antigen = factor(antigen, levels = c(
+    'IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_Con.6.gp120.B_Month_6.5', 'Con.6.gp120.B_Month_12',
+    'IgG_ZM96.gp140_Month_6.5','IgG_gp70_B.CaseA_V1_V2_Month_12'
+))) %>%
+
+pass -> tmp
+
+#tmp$antigen %>% unique
+
+tmp %>% filter(clr_p.value < 0.05 & clr_q.value < 0.2) %>%
+pull(Taxon) %>% unique -> useFamily
+
+tmp %>% filter(Taxon %in% useFamily) %>%
+
+#Clean up labels
+mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " Month", " -- Month")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, "IgG ", "")) %>%
+
+ggplot(aes(x = TaxonF, y = clr_estimate,
+           color = (clr_p.value < 0.05), shape =(clr_q.value < 0.2))) +
+geom_point(size = 3) + 
+geom_errorbar(aes(ymin = clr_estimate - 2*clr_std.error, ymax = clr_estimate + 2*clr_std.error)) + 
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_hline(yintercept = 0) +
+facet_wrap(~antigen, ncol = 1, scales = 'free_y') + xlab("Family Level Taxon")
+# Show the censored ones accross - so this would be everything with at least one hit
+# but also show what they are in all cases.
+
+ggsave('figures/anyFamilyIgg.png', width = 6, height = 8)
+```
+
+I think its worth digging into clostridia and Prophyromonidaceae with stacked bars
+
+# Proportionality heatmap
+
+Family level
+
+Lets come back to this after we've done the local tests. Since we need them to color code the axes.
+
+```{r}
+psDf %>% print
+```
+
+```{r}
+psDf %>% filter(taxLevels == 'Family') %>% dplyr::select(ps) %>% pull %>%.[[1]]
+```
+
+```{r}
+print(psDf)
+```
+
+```{r}
+#nFamilyTaxa <- NTaxaAtLevel %>% filter(taxLevels == 'Family') %>% pull(ntaxa)
+
+psDf %>% filter(taxLevels == 'Family') %>% dplyr::select(psNoZero) %>% pull %>%.[[1]] %>%
+otu_table %>% as.data.frame %>%
+pass -> myRel
+
+ptm = proc.time()
+phiBoot <- boot(data = myRel, statistic = boot_phi, R = 1000)
+proc.time() - ptm
+
+ptm = proc.time()
+tidyCI <- unwarn(
+    tidy(phiBoot,conf.int=TRUE,conf.method="bca")
+    )
+proc.time() - ptm
+
+myRel %>% make_proportionality_matrix %>% 
+         as.data.frame %>%
+         rownames_to_column("TaxonX") %>% gather(TaxonY, phi, -TaxonX) %>%
+    filter(TaxonX != TaxonY) %>% data.frame(tidyCI) -> namedTidyCI
+```
+
+```{r}
+head(LocalTests)
+```
+
+```{r}
+LocalTests %>% filter(test == 'gaussian' &
+                        antigen == 'MDS1' &
+                         clr_p.value <0.05 &
+                        clr_q.value < 0.2&
+                        taxLevels == "Family") -> tmp
+tmp %>% pull(Taxon) -> MDS1Fam
+tmp %>% filter(clr_estimate < 0) %>% pull(Taxon) -> lowMDS1Fam
+tmp %>% filter(clr_estimate >= 0) %>% pull(Taxon) -> highMDS1Fam
+```
+
+https://stackoverflow.com/questions/48531987/incorporate-more-information-about-variables-on-axes-into-a-heatmap-in-ggplot/48532983#48532983
+
+I'd like to do this, but for gp41 baseline and gp120 as well.
+
+```{r}
+useFamily
+```
+
+```{r}
+LocalTests %>% head
+```
+
+```{r}
+reshape2::melt
+```
+
+```{r}
+targStat <- "phi"
+namedTidyCI %>% dplyr::select(TaxonX, TaxonY, targStat) %>% spread(key = TaxonY, value = targStat) %>%
+remove_rownames %>% column_to_rownames("TaxonX") %>%
+as.dist %>% as.matrix -> phidata
+
+phi_dd <- as.dist(phidata)
+phi_hc <- hclust(phi_dd)
+
+phidata %>%
+#.[phi_hc$order, phi_hc$order] %>% # this way also worked just fine
+reshape2::melt() %>%
+mutate(Var1 = factor(Var1, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+mutate(Var2 = factor(Var2, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+pass-> tmp
+
+p_phi_1 <- ggplot(tmp, aes(Var1, Var2, fill =(value))) + 
+geom_tile() +
+  scale_fill_gradient(high = "grey90", low = "red", 
+    space = "Lab", 
+    name="phi",
+                    limits = c(NA, 3), na.value = "white") +
+#  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(
+     angle = 90, vjust = 1, size = 7, hjust = 1,
+     face = ifelse(levels(tmp$Var1) %in% useFamily, "bold", "plain"),
+     colour = ifelse(levels(tmp$Var1) %in% useFamily, "black", "grey30")
+                                 ),
+       axis.text.y = element_text(
+           size = 7,
+           face = ifelse(levels(tmp$Var1) %in% MDS1Fam, "bold", "plain"),
+           colour = ifelse(levels(tmp$Var1) %in% lowMDS1Fam, "red",
+                          ifelse(levels(tmp$Var1) %in% highMDS1Fam, "blue", "grey30"))
+       ))+
+ coord_fixed() +
+labs(x = "Family Any Igg",y = "Family MDS1 (red-low, blue-high)" ) +
+# rectangles around the three clusters, positioned by eye
+  geom_rect(aes(xmin = 0 + 0.5, xmax = 10 - 0.5, ymin = 0 + 0.5, ymax = 10 - 0.5),
+               fill = "transparent", color = "gray20", size = 1.5) +
+  geom_rect(aes(xmin = 13 + 0.5, xmax = 24 - 0.5, ymin = 13 + 0.5, ymax = 24 - 0.5),
+               fill = "transparent", color = "gray20", size = 1.5) +
+  geom_rect(aes(xmin = 23 + 0.5, xmax = 37 - 0.5, ymin = 23 + 0.5, ymax = 37 - 0.5),
+               fill = "transparent", color = "gray20", size = 1.5)
+
+
+p_phi_1
+# ggsave("figures/phi_vs_mds1_and_igg.png", p_phi_1, width = 6, height = 6)
+```
+
+```{r}
+LocalTests %>%
+filter(taxLevels == 'Family') %>%
+order_taxa_by_mds1 %>%
+
+filter(
+    (antigen %in% c('IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_Con.6.gp120.B_Month_6.5',
+                   'IgG_ZM96.gp140_Month_6.5','IgG_gp70_B.CaseA_V1_V2_Month_12'))|
+    (antigen == 'Con.6.gp120.B_Month_12' & test == 'gaussian')
+      ) %>%
+mutate(antigen = factor(antigen, levels = c('IgG_gp41_Month_0', 'IgG_gp41_Month_6.5', 'IgG_Con.6.gp120.B_Month_6.5', 'Con.6.gp120.B_Month_12',
+                                           'IgG_ZM96.gp140_Month_6.5','IgG_gp70_B.CaseA_V1_V2_Month_12'))) %>%
+pass -> tmp
+
+tmp %>% dplyr::select(antigen, Taxon, clr_estimate, clr_p.value, clr_q.value) %>%
+mutate(clr_sign = sign(clr_estimate)) %>%
+mutate(isHit = ifelse(clr_p.value < 0.05 & clr_q.value < 0.2, 1, 0)) %>%
+mutate(Taxon = factor(Taxon, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+pass -> chorddata
+```
+
+```{r}
+targStat <- "conf.low"
+namedTidyCI %>% dplyr::select(TaxonX, TaxonY, targStat) %>% spread(key = TaxonY, value = targStat) %>%
+remove_rownames %>% column_to_rownames("TaxonX") %>%
+as.dist %>% as.matrix -> phidata
+
+phi_dd <- as.dist(phidata)
+phi_hc <- hclust(phi_dd)
+
+phidata %>%
+#.[phi_hc$order, phi_hc$order] %>% # this way also worked just fine
+reshape2::melt() %>%
+mutate(Var1 = factor(Var1, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+mutate(Var2 = factor(Var2, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+pass-> tmp
+
+ggplot(tmp, aes(Var1, Var2, fill =(value))) + 
+geom_tile() +
+  scale_fill_gradient(high = "grey90", low = "red", 
+    space = "Lab", 
+    name="phi",
+                    limits = c(NA, 3), na.value = "white") +
+#  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(
+     angle = 90, vjust = 1, size = 7, hjust = 1,
+     face = ifelse(levels(tmp$Var1) %in% useFamily, "bold", "plain"),
+     colour = ifelse(levels(tmp$Var1) %in% useFamily, "black", "grey30")
+                                 ),
+       axis.text.y = element_text(
+           size = 7,
+           face = ifelse(levels(tmp$Var1) %in% MDS1Fam, "bold", "plain"),
+           colour = ifelse(levels(tmp$Var1) %in% lowMDS1Fam, "red",
+                          ifelse(levels(tmp$Var1) %in% highMDS1Fam, "blue", "grey30"))
+       ))+
+ coord_fixed() +
+labs(x = "Family Any Igg",y = "Family MDS1 (red-low, blue-high)" )-> p_phi_low
+p_phi_low
+
+# ggsave("figures/phi_vs_mds1_and_igg.png", p_phi_1, width = 6, height = 6)
+```
+
+```{r}
+targStat <- "conf.high"
+namedTidyCI %>% dplyr::select(TaxonX, TaxonY, targStat) %>% spread(key = TaxonY, value = targStat) %>%
+remove_rownames %>% column_to_rownames("TaxonX") %>%
+as.dist %>% as.matrix -> phidata
+
+phi_dd <- as.dist(phidata)
+phi_hc <- hclust(phi_dd)
+
+phidata %>%
+#.[phi_hc$order, phi_hc$order] %>% # this way also worked just fine
+reshape2::melt() %>%
+mutate(Var1 = factor(Var1, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+mutate(Var2 = factor(Var2, levels = unique(phi_hc$labels)[phi_hc$order])) %>%
+pass-> tmp
+
+ggplot(tmp, aes(Var1, Var2, fill =(value))) + 
+geom_tile() +
+  scale_fill_gradient(high = "grey90", low = "red", 
+    space = "Lab", 
+    name="phi",
+                    limits = c(NA, 3), na.value = "white") +
+#  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(
+     angle = 90, vjust = 1, size = 7, hjust = 1,
+     face = ifelse(levels(tmp$Var1) %in% useFamily, "bold", "plain"),
+     colour = ifelse(levels(tmp$Var1) %in% useFamily, "black", "grey30")
+                                 ),
+       axis.text.y = element_text(
+           size = 7,
+           face = ifelse(levels(tmp$Var1) %in% MDS1Fam, "bold", "plain"),
+           colour = ifelse(levels(tmp$Var1) %in% lowMDS1Fam, "red",
+                          ifelse(levels(tmp$Var1) %in% highMDS1Fam, "blue", "grey30"))
+       ))+
+ coord_fixed() +
+labs(x = "Family Any Igg",y = "Family MDS1 (red-low, blue-high)" )-> p_phi_high
+p_phi_high
+# ggsave("figures/phi_vs_mds1_and_igg.png", p_phi_1, width = 6, height = 6)
+```
+
+```{r}
+chorddata %>%
+#Clean up labels
+mutate(antigen = stringr::str_replace_all(antigen, "_", " ")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, " Month", " -- Month")) %>%
+mutate(antigen = stringr::str_replace_all(antigen, "IgG ", "")) %>%
+
+ggplot(
+    aes(x = Taxon, y = antigen, alpha = factor(isHit), color = factor(clr_sign))) +
+scale_alpha_discrete(range = c(0, 1)) +
+guides(alpha = FALSE) +
+theme_minimal() +
+     coord_fixed(ratio = 2) +
+scale_colour_manual(values = c("red", "blue")) +
+ theme(axis.text.x = element_text(
+     angle = 90, vjust = 0.5, size = 7, hjust = 1,
+     face = ifelse(levels(chorddata$Taxon) %in% useFamily, "bold", "plain"),
+     colour = ifelse(levels(chorddata$Taxon) %in% useFamily, "black", "grey30")),
+     plot.margin = unit(c(0,3,1,3), "cm")
+     ) +
+#guides(col = TRUE) +
+guides(color=guide_legend(title="Sign of GLM")) +
+labs(x = "Family",y = "Antigen -- Month" ) +
+geom_point() -> guitar_chords
+
+
+
+par <- options()
+options(repr.plot.width=10, repr.plot.height= 5)
+guitar_chords
+options(par)
+```
+
+```{r}
+p_phi_1a <- p_phi_1 + 
+theme(axis.text.x = element_blank(),
+     axis.title.x = element_blank(),
+     plot.margin = unit(c(1, 3, -5.5, 4), "cm"))
+
+par <- options()
+options(repr.plot.width=8, repr.plot.height= 8)
+
+p_phi_cord <- cowplot::plot_grid(p_phi_1a, guitar_chords, nrow = 2, align = "v")
+
+p_phi_cord
+
+#phi_legend <- cowplot::get_legend(p_phi_1)
+# cowplot::ggdraw(
+#     cowplot::plot_grid(
+#     cowplot::plot_grid(p_phi_1a, guitar_chords, ncol = 1, align = "v"),
+#       cowplot::plot_grid(phi_legend, NULL, ncol = 1),
+#       rel_widths = c(10,1)
+#         ))
+
+ ggsave('figures/phi_heatmap_withlegend.png', width = 10, height = 10)
+
+options(par)
+```
+
+# Stacked bars
+
+```{r}
+# More color-blind friendly colorbalettes
+#http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
+cb10 <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a')
+
+cb12 <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928')
+
+# Less color-blind friendly, but still nice.
+#https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+trub20 <- c('#e6194b','#3cb44b','#ffe119','#0082c8','#f58231','#911eb4','#46f0f0','#f032e6','#d2f53c','#fabebe','#008080','#e6beff','#aa6e28','#fffac8','#800000','#aaffc3','#808000','#ffd8b1','#000080','#808080','#FFFFFF','#000000')
+```
+
+```{r}
+options(repr.plot.width=8, repr.plot.height= 4)
+```
+
+Bookmark Here. Stuck for strange reasons.
+```{r}
+ordered_pub_id_df <- psN2 %>% sample_data %>% dplyr::select(pub_id, rMDS1, newname, MDS1) %>% arrange(rMDS1) %>% mutate(MDS1 = round(MDS1, 2), fig3tick = paste(pub_id, MDS1,sep = "_"))
+ordered_pub_id_df
+fig3tick <- ordered_pub_id_df %>% pull(fig3tick)
+```
+
+```{r}
+p_phy <- plot_bar(psN2, x = 'newname', fill = 'Phylum') + scale_fill_manual(values = cb10)  + xlab("") +
+ggtitle("All Phyla")+ theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) + scale_x_discrete(labels = fig3tick) + labs(x = "pub_id _ MDS1", y = "Relative Abundance")
+p_phy
+#ggsave('plots/Phyla_by_wuf1.png')
+```
+
+```{r}
+p_firm <-  subset_taxa(psN2, Phylum == 'Firmicutes') %>%
+plot_bar( x = 'newname', fill = 'Order') +
+theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) +
+scale_fill_manual(values = cb10) + scale_x_discrete(labels = fig3tick) + labs(x = "pub_id _ MDS1", y = "Relative Abundance")
+p_firm
+#ggsave('plots/MostFirmicutesAreClostridiales.png')
+```
+
+```{r}
+p_clostridia <-  subset_taxa(psN2, Class == 'Clostridia') %>%
+plot_bar( x = 'newname', fill = 'Family') + scale_fill_manual(values = cb10)  + xlab("") +
+ggtitle("Families of Order Clostridiales (All Class Clostridia)")+ theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) + scale_x_discrete(labels = fig3tick) + labs(x = "pub_id _ MDS1", y = "Relative Abundance")
+p_clostridia
+```
+
+```{r}
+# p_porph <-  subset_taxa(psN2, Family == 'Porphyromonadaceae') %>%
+# plot_bar( x = 'newname', fill = 'Genus') + scale_fill_manual(values = cb10) #+ theme_bw()
+# p_porph
+```
+
+```{r}
+# p_bact <- subset_taxa(psN2, Phylum == 'Bacteroidetes') %>% # all class (Bacteroidia), order (Bacteroidales)
+# plot_bar(x = 'newname', fill = 'Family') + scale_fill_manual(values = cb10) #+ theme_bw()
+# p
+
+# ggsave('figures/Bacteroidetes_Families.png')
+```
+
+```{r}
+p_ClosXI <- subset_taxa(psN2, Family == 'Clostridiales_Incertae_Sedis_XI') %>%
+plot_bar( x = 'newname', fill = 'Genus') + scale_fill_manual(values = cb10) + xlab("") +
+ggtitle("Genera of Family Clostridiales_Incertae_Sedis_XI")+ theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) + scale_x_discrete(labels = fig3tick) + labs(x = "pub_id _ MDS1", y = "Relative Abundance")
+p_ClosXI
+#ggsave('figures/Clostridiales_Incertae_Sedis_XI_Genus.png')
+```
+
+```{r}
+
+p_Bact <- subset_taxa(psN2, Phylum == 'Bacteroidetes') %>%
+plot_bar( x = 'newname', fill = 'Family') + scale_fill_manual(values = cb10) + xlab("") +
+ggtitle("Families of Class Bacteroidetes (All Order Bacteroidiales)")+ theme_bw() +
+theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
+     strip.text.y = (element_text(angle = 90))) + scale_x_discrete(labels = fig3tick) + labs(x = "pub_id _ MDS1", y = "Relative Abundance")
+p_Bact
+#ggsave('figures/Bacteroides.png')
+```
+
+```{r}
+options(repr.plot.width=14, repr.plot.height= 8)
+sb <- cowplot::plot_grid(p_phy, p_Bact,p_clostridia,p_ClosXI,ncol = 2, labels = c("A", "B", "C", "D"))
+sb
+cowplot::save_plot('figures/stacked_bars.png', sb, base_width = 14, base_height = 8)
+cowplot::save_plot('figures/stacked_bars.svg', sb, base_width = 14, base_height = 8)
+```
+
+# Exporting OTU tables and Taxa tables at each agglomeration level
+
+```{r}
+# psDf %>%
+# mutate(OTU = map(ps, ~data.frame(otu_table(.)))) %>%
+# mutate(Tax = map(ps, ~data.frame(tax_table(.)))) %>%
+# mutate(OTUCount = map (psCount, ~data.frame(otu_table(.)))) %>%
+# pass -> psDf1
+```
+```{r}
+psDf %>%
+mutate(OTU = map(ps, ~data.frame(otu_table(.)))) %>%
+mutate(Tax = map(ps, ~as.data.frame(.@tax_table@.Data))) %>%
+mutate(OTUCount = map (psCount, ~data.frame(otu_table(.)))) %>%
+pass -> psDf1
+```
+
+```{r}
+psDf1 %>%
+.[1:5,] %>%
+mutate(Tax = map(Tax, ~dplyr::select(.,-oldname2))) %>%
+print
+```
+
+```{r}
+# https://stackoverflow.com/questions/50341012/return-the-mapped-object-if-expression-inside-of-purrrpossibly-fails/50341205#50341205
+rm_oldname2 <- function(x){
+    f = possibly(function() dplyr::select(x, -oldname2), otherwise = x)
+        f()
+}
+```
+
+```{r}
+psDf1 %>%
+#.[1:5,] %>%
+mutate(Tax = map(Tax, rm_oldname2)) %>%
+pass -> psDf1b
+```
+
+```{r}
+print(psDf1)
+```
+
+```{r}
+# Show which species level OTUs are contained in each agglomerated group:
+psDf1b %>%
+.[1:5,] %>%
+mutate(TaxIdx = map(Tax, function(df){
+    df %>%
+    mutate(tag = as.character(tag), oldGroups = as.character(oldGroups)) %>%
+    dplyr::select(tag, oldGroups) %>%
+    mutate(oldGroups = strsplit(oldGroups, ",")) %>%
+    unnest(oldGroups)
+})) %>%
+dplyr::select(taxLevels, TaxIdx) %>%
+unnest(TaxIdx) %>%
+mutate(oldGroups = trimws(oldGroups)) %>% # Some of these have leading or trailing whitespace
+spread(taxLevels, tag) %>%
+dplyr::select(oldGroups, Phylum, Class, Order, Family, Genus) %>%
+pass -> taxGroupMapping
+write_csv(taxGroupMapping, 'tables/taxGroupMapping.csv')
+```
+
+```{r}
+# Print out each otu table (relative abundances).
+walk2(psDf1b$taxLevels, psDf1b$OTU, 
+      ~write.csv(.y, file = paste0("tables/OTU/otu_",.x, ".csv")))
+```
+
+```{r}
+# Print out each otu table (counts).
+walk2(psDf1b$taxLevels, psDf1b$OTUCount, 
+      ~write.csv(.y, file = paste0("tables/OTU/otuCount_",.x, ".csv")))
+```
+
+```{r}
+# Print out each taxonomy table.
+walk2(psDf1b$taxLevels, psDf1b$Tax, 
+      ~write_csv(.y, path = paste0("tables/Tax/tax_",.x, ".csv")))
+```
+
+
+
+
+# Response to reviewers: Richness
+
+
+The reviewer asks if it associates with MDS1. I'll check for associations with immunogenicity as well.
+
+Calculate the alpha diversity values for psN1
+```{r}
+bN1 <- breakaway(psN1)
+```
+
+Initial look at alpha diveristy values.
+```{r}
+plot(bN1)
+```
+Large confidence intervals. Also, probably best to examine in log space going forward.
+
+Range of breakaway estimates
+```{r}
+summary(bN1)$estimate %>% range
+```
+
+
+## Richness vs MDS1
+
+```{r}
+btN_MDS <- betta(summary(bN1)$estimate,
+              summary(bN1)$error,
+              make_design_matrix(psN1, "MDS1")
+)
+btN_MDS
+```
+Not in any way that is statistically significant (p = 0.246)
+
+Some pre-computing
+```{r}
+richEsts <- bN1 %>% map_dbl("estimate")
+
+richCI <- bN1 %>% map_df("interval") %>% t %>% as.data.frame() %>% rename(richLb = V1, richUb = V2) %>% merge(as.data.frame(richEsts), by = "row.names") %>% transform(row.names = Row.names, richEst = richEsts, Row.names = NULL, richEsts = NULL)
+# need to add mds1 to this, or just tack this all onto psN1rich
+
+psN1rich <- psN1
+sample_data(psN1rich) <- merge(psN1@sam_data, richCI, by = "row.names") %>% transform(row.names = Row.names, Row.names = NULL)
+```
+
+Plot richness vs mds1
+```{r}
+psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst)) + geom_point() #+ geom_errorbar()
+```
+
+As above but with error bars.
+
+```{r}
+psN1richP <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb)) + geom_point() + geom_errorbar() + scale_y_log10()
+psN1richP
+```
+
+## Unifrac Distance vs Richness
+The reviewer actually asked whether unifrac distance associates with alpha diversity. I've done that with MDS1, but not distance per se.
+Lets do one kernel regression, where we ask whether unifrac distance associates with richness.
+
+
+
+Kernel regression, weighted unifrac vs richness
+```{r}
+mirRich <- MiRKAT(y = richEsts, Ks = wufKN2, out_type = "C", method = 'permutation', nperm = jnperm)
+mirRich
+```
+Very similar p-value to running betta against MDS1.
+
+PCoA figure that compares MDS1 and MDS2 to richness
+```{r}
+psN1richMDSP<- psN1rich %>%
+sample_data() %>%
+ggplot(aes(x = MDS1, y = MDS2)) + geom_point(aes(fill = richEst), size = 5, stroke = 1, shape = 21) +
+viridis::scale_fill_viridis(name = 'richEst', direction = 1, option = "viridis") +
+  coord_fixed(sqrt(psN2.pcoa$CA$eig[2]/psN2.pcoa$CA$eig[1])) +
+#scale_colour_manual(name = 'gp41 Primary', values = c('black', 'grey70')) + 
+cowplot::theme_cowplot()
+psN1richMDSP
+```
+
+
+### Two text examples, where we wil see if we can relate richness to a parameter
+
+Here is a discrete example
+originally I used Gp120 month 6.5. Switching to gp41 month 6.5, since subsequent analyis suggested that it does show a relationship, and so makes a more useful exemplar
+```{r}
+gpLocmtx <- cbind(1,
+  psN1 %>% sample_data %>% as.matrix %>% as.data.frame %>% pull(IgG_gp41_Month_6.5) %>% as.character %>% as.numeric %>% medcode
+)
+colnames(gpLocmtx) = c("(Intercept)", "predictors")
+```
+
+```{r}
+btNLoc <- betta(summary(bN1)$estimate,
+              summary(bN1)$error,
+              gpLocmtx
+)
+btNLoc
+```
+
+## Compare richness to each immunogenicity parameter.
+
+Step 1, make a data frame with BN1, but pub_id for each sample
+
+Pre calculations
+
+```{r}
+SampleNameToPubId <- psN1 %>% sample_data %>% as.data.frame %>% rownames_to_column() %>% as.tibble %>% dplyr::select(rowname, pub_id) %>% na.omit()
+```
+
+A function that takes immunogenicity data, x (which we will pass in with tidyverse mapping functions), ad, the breakaway richness summary, and a transformation, defaults to medcode2 of the immunogenicity data.
+
+```{r}
+immuneValpha <- function(x, ad = bN1, transformation = medcode2){
+  #x <- arrange(x, rowname)
+  x2 <- right_join(x, SampleNameToPubId, by = 'pub_id')
+  x3 <- x2[is.finite(x2$mag),]
+  
+  ad2 <- ad[is.finite(x2$mag)]
+  class(ad2) <- c("alpha_estimates", "list")
+  
+  gpXmtx = cbind(1, transformation(x3$mag))
+  #gpXmtx
+  
+   thing <- betta(summary(ad2)$estimate,
+               summary(ad2)$error,
+               gpXmtx
+ )
+   out <- as.data.frame(t(thing$table[2,]))
+   #colnames(out) = "pval"
+   
+   # add R^2 value, from simple pearson correlation
+   locCor <- cor(summary(ad2)$estimate, gpXmtx[,2], method = "pearson")
+   r2 <- locCor^2
+   out2 <- data.frame(out, r2)
+   
+   out2
+}
+
+# test a single use case
+immuneValpha(use.immune %>% filter(visitno == 9, type == "IgG", antigen == "Con.6.gp120.B"), bN1, transformation = medcode)
+```
+
+Actually run the analysis, raw table
+
+```{r}
+immuneAlphaCompiled <- use.immune %>% 
+  group_by(type, antigen, month) %>%
+  do(immuneValpha(.)) %>%
+  ungroup # if you forget to ungroup, pvalue calculations don't work correctly
+immuneAlphaTable <- immuneAlphaCompiled %>% mutate(qval = p.adjust(`p.values`, method = "BH"))
+immuneAlphaTable
+```
+
+Pretty up the table above for publication
+
+```{r}
+conciseImmuneAlphaTable <- immuneAlphaTable %>% 
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, R2 = r2, P=`p.values`, Q = qval)
+toAlphaTable <- conciseImmuneAlphaTable %>%
+  mutate(
+    Coef = cell_spec(format(Coef, digits = 3), "html",
+                     bold = ifelse(P < 0.05, T, F),
+                     italic = ifelse(P < 0.05 & Coef < 0, T, F),
+                     background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    R2 = cell_spec(round(R2, digits = 3), "html"),
+    P = cell_spec(format_round(P, 3), "html",
+                         bold = ifelse(P < 0.05, T, F),
+                         background = ifelse(P < 0.05, 'yellow', '')
+    ),
+    Q = cell_spec(format_round(Q, 3), "html",
+                         bold = ifelse(Q < 0.2, T, F),
+                         background = ifelse(Q < 0.2, 'lightyellow', '')
+    )
+  ) %>%
+   mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+  mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen))
+
+toAlphaTable %>% kable("html", escape = F, digits = 3, align = 'c') %>%
+  kable_styling("striped", "hover", full_width = F)  %>%
+  collapse_rows(columns = 1:2, latex_hline = "full") %>%
+  pass-> conciseAlphaTable.html
+
+conciseAlphaTable.html %>% cat(file = 'tables/conciseAlphaTable.html')
+
+conciseAlphaTable.html
+```
+
+
+
+
+### As above but with continuous immunogenicity data.
+
+
+
+```{r}
+immuneAlphaCompiledGaus <- use.immune %>% 
+  group_by(type, antigen, month) %>%
+  do(immuneValpha(., transformation = jac_box_cox_2)) %>% 
+  ungroup
+```
+
+```{r}
+immuneAlphaTableGaus <- immuneAlphaCompiledGaus %>% mutate(qval = p.adjust(`p.values`, method = "BH"))
+immuneAlphaTableGaus
+```
+
+```{r}
+conciseImmuneAlphaTableGaus <- immuneAlphaTableGaus %>% 
+  dplyr::select(Type = type, Antigen = antigen, Month = month, Coef=Estimates, R2 = r2, P=`p.values`, Q = qval)
+toAlphaTableGaus <- conciseImmuneAlphaTableGaus %>%
+  mutate(
+    Coef = cell_spec(format(Coef, digits = 3), "html",
+                     bold = ifelse(P < 0.05, T, F),
+                     italic = ifelse(P < 0.05 & Coef < 0, T, F),
+                     background = ifelse(P < 0.05, ifelse(Coef < 0, "lightsalmon", "lightblue"), "")),
+    R2 = cell_spec(ifelse(R2 < 0.01, format(R2, digits = 2),round(R2, digits = 2)) , "html"),
+    P = cell_spec(format_round(P, 3), "html",
+                         bold = ifelse(P < 0.05, T, F),
+                         background = ifelse(P < 0.05, 'yellow', '')
+    ),
+    Q = cell_spec(format_round(Q, 3), "html",
+                         bold = ifelse(Q < 0.2, T, F),
+                         background = ifelse(Q < 0.2, 'lightyellow', '')
+    )
+  ) %>%
+   mutate(Antigen = gsub('ANY.ENV.PTEG', 'Any ENV PTEG', Antigen)) %>%
+  mutate(Antigen = gsub('gp70_B.CaseA_V1_V2', 'gp70 B.CaseA V1-V2', Antigen))
+
+toAlphaTableGaus %>% kable("html", escape = F, digits = 3, align = 'c') %>%
+  kable_styling("striped", "hover", full_width = F)  %>%
+  collapse_rows(columns = 1:2, latex_hline = "full") %>%
+  pass-> conciseAlphaTableGaus.html
+
+conciseAlphaTableGaus.html %>% cat(file = 'tables/conciseAlphaTableGaus.html')
+
+conciseAlphaTableGaus.html
+```
+
+
+
+Richness vs alpha above, but this time colorcoding by group.
+
+```{r}
+psN1richP_gp41m6 <- psN1rich %>% sample_data %>% as.data.frame %>%
+  ggplot(aes(x = MDS1, y = richEst, ymin = richLb, ymax = richUb, fill = as.factor(medcode_hl(IgG_gp41_Month_6.5)))) + geom_point(shape = 21, size = 4) + geom_errorbar() + scale_y_log10() + scale_fill_viridis_d(direction = -1, name = 'gp41 Primary Timepoint') + labs(x = "MDS1", y = "Richness (# ASVs)") + cowplot::theme_cowplot()
+psN1richP_gp41m6
+```
+
+
+Summary figure for of alpha
+
+
+
+Combined figure
+```{r, fig.height = 6, fig.width=8}
+par <- options()
+#options(repr.plot.width=6, repr.plot.height= 11)
+#g <- grid.arrange(wuford_gp41, wuford_gp120, ncol = 2)
+g <- cowplot::plot_grid(psN1richMDSP, psN1richP_gp41m6, ncol = 1, labels = c("A", "B"), label_size = 24, align = "v")
+g
+
+cowplot::save_plot('figures/richnessMDS1Gp41.png', g, base_width = 6, base_height = 8)
+```
+
+## Next question. Do the donor and non donor groups ever have different immune responses?
+This is in response to a reviewr comment.
+Strategy, write a function to, for one variable of interest, compare the groups, as I did for unifrac distance. I'll use a simple logistic regression here.
+Similar to CapVar. I want a use.immune data set that includes whether people are a donor as a column, but that 
+
+```{r}
+immune.data %>%
+mutate(isDonor = pub_id %in% muDoners) %>%
+filter(
+    (type == 'IgG' & 
+    antigen %in% ants1 &
+    month %in% c(6.5,12)
+    ) |
+    (type %in% c('IgG', 'IgA') &
+     antigen %in% ants2 &
+     month %in% c(0,6.5,12)
+    ) |
+    type == 'CD4+' &
+    antigen == 'ANY.ENV.PTEG' &
+    month %in% c(6.5, 12)
+      )-> allparticipants.immune
+head(allparticipants.immune)
+```
+
+```{r}
+allparticipants.test <- allparticipants.immune %>% filter(visitno ==9, antigen == "Con.6.gp120.B",type == "IgG")
+head(allparticipants.test)
+```
+
+```{r}
+donorTest <- function(x, transformation = medcode2, family = 'binomial'){
+  loc_glm <- glm(transformation(mag) ~  isDonor, data = x, family = family)
+  loc_glm %>% broom::tidy() %>% filter(term == 'isDonorTRUE') %>% dplyr::select(-term)
+}
+donorTest(allparticipants.test)
+```
+
+Do on everything
+```{r}
+allparticipants.immune %>%
+  filter(ct == 'T') %>%
+  group_by(type, antigen, visitno) %>%
+  do(data.frame(donorTest(.))) %>%
+  pass-> DonorEffectTable
+```
+
+
+```{r}
+DonorEffectTable
+```
+
+Ok. There appears to be no significant difference in magnitude group for any category.
+
+
+
+```{r}
+allparticipants.immune %>%
+  filter(ct == 'T') %>%
+  group_by(type, antigen, visitno) %>%
+  do(data.frame(donorTest(.,  transformation = function(x){jac_box_cox_2(x)},
+                     family = 'gaussian'))) %>%
+  pass-> DonorEffectGaus
+```
+Monkeys, I guess its debug aclock.
+
+```{r}
+DonorEffectGaus
+```
+
+Same deal when I do a normal logistic regression.
+
+```{r}
+save.image(file = "workspace.Rdata")
+```

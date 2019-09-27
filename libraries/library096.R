@@ -57,7 +57,11 @@ transform_otu_table <- function(ps, f, ...){
 ## Sometimes my phyloseq objects have a "tag" taxonomic field that I am re-defining.
 ## This removes that "tag" field.
 remove_tag_phyloseq <- function(ps){
-    tx <- ps %>% tax_table %>% as.data.frame %>% rownames_to_column %>%
+    # tx <- ps %>% tax_table %>% as.data.frame %>% rownames_to_column %>%
+    # dplyr::select(-tag) %>% column_to_rownames(var = 'rowname') %>% as.matrix %>% tax_table
+    tx0 <- as.data.frame(ps@tax_table@.Data)
+    tx1 <- rownames_to_column(tx0)
+    tx <- tx1 %>%
     dplyr::select(-tag) %>% column_to_rownames(var = 'rowname') %>% as.matrix %>% tax_table
     
     ps@tax_table <- tx
@@ -125,14 +129,22 @@ tip_glom_saveid <- function(physeq, hcfun = agnes, h = NULL, k = NULL, ...){
                                                             i])
     }
 
-    glomReps <- physeq %>% tax_table %>% as.data.frame %>% rownames
+    ## the following crashes in r 6.1, rewrite as per https://github.com/joey711/phyloseq/issues/983 21 Aug 2019
+    #glomReps <- physeq %>% tax_table %>% as.data.frame %>% rownames
+    glomReps <- rownames(as.data.frame(physeq@tax_table@.Data))
+    
     
     ## order that the old groups should go in in the new object
     sapply(glomReps, function(y){
         (which(sapply(grps, function(x){y %in% x})))             
     }) -> grpOrder
     
-    physeq %>% tax_table %>% data.frame(oldGroups = oldGroups[grpOrder]) %>% as.matrix %>% tax_table -> gtt
+    ## rewrite 21 Aug 2019
+    #physeq %>% tax_table %>% data.frame(oldGroups = oldGroups[grpOrder]) %>% as.matrix %>% tax_table -> gtt
+    gtt0 <- as.data.frame(physeq@tax_table@.Data)
+    gtt0$oldGroups = oldGroups[grpOrder]
+    gtt <- tax_table(as.matrix(gtt0))
+    
     physeq@tax_table <- gtt
     
     physeq
@@ -163,7 +175,8 @@ pass <- function(x){x}
 ## and zeros are below
 medcode <- function(vec){
     sapply(vec, function(x){
-    if(x < median(na.omit(vec))){0}else{1}
+      if(is.finite(x)){
+    if(x < median(na.omit(vec))){0}else{1}}else{NaN}
     }
            )
            }
@@ -186,7 +199,13 @@ jac_box_cox <- function(vec){
     require(car)
     pt <- car::powerTransform(vec)
     car::bcPower(vec, pt$roundlam)
-    }
+}
+
+jac_box_cox_2 <- function(vec){
+  bct <- jac_box_cox(vec)
+  out <- scale(bct)
+  out
+}
     
 
 ## take a phyloseq object, and replace the old rownames of the tax_table
@@ -201,7 +220,8 @@ swap.phyloseq.taxnames <- function(ps, oldname = 'Sequence', newname = 'tag'){
     ps2 <- ps
     
                                         # Get old and new names
-    tt <- tax_table(ps)
+    #tt <- tax_table(ps)
+    tt <- as.data.frame(ps@tax_table@.Data)
     oldNames <- rownames(tt)
     newNames <- as.vector(tt[,newname])
     
@@ -356,7 +376,9 @@ tag_phyloseq <- function(ps){
     
     sequences <- rownames(tax_table(ps))
     
-    ps %>% tax_table %>% as.data.frame %>%
+    #ps %>% tax_table %>% as.data.frame %>%
+tx0 <- as.data.frame(ps@tax_table@.Data)
+tx0 %>%
         by_row(tag_taxon, .to = "tag") %>%
         mutate(tag = fix_LongName_in_vec(fix_EColi_in_vec(tag))) %>%
         mutate(tag = make.unique(as.character(tag)), sequence = sequences) %>%

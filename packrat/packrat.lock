@@ -1,6 +1,6 @@
 PackratFormat: 1.4
 PackratVersion: 0.4.8.1
-RVersion: 3.4.1
+RVersion: 3.6.0
 Repos: BioCsoft=https://bioconductor.org/packages/3.6/bioc,
     BioCann=https://bioconductor.org/packages/3.6/data/annotation,
     BioCexp=https://bioconductor.org/packages/3.6/data/experiment,
@@ -141,6 +141,35 @@ Package: PearsonDS
 Source: CRAN
 Version: 1.1
 Hash: e998bafd560e90379ddee993b879a14d
+
+Package: R.cache
+Source: CRAN
+Version: 0.13.0
+Hash: 0eecfcdefd20078a5ef6f1ac3b5feed4
+Requires: R.methodsS3, R.oo, R.utils, digest
+
+Package: R.methodsS3
+Source: CRAN
+Version: 1.7.1
+Hash: 99f841ba1614c005e6672c5fb01b352a
+
+Package: R.oo
+Source: CRAN
+Version: 1.22.0
+Hash: c37ded09136c4ae98b9c73cf42dee3c8
+Requires: R.methodsS3
+
+Package: R.rsp
+Source: CRAN
+Version: 0.43.1
+Hash: 93b3d619350bed09fbf0451762e77fc7
+Requires: R.cache, R.methodsS3, R.oo, R.utils, digest
+
+Package: R.utils
+Source: CRAN
+Version: 2.9.0
+Hash: 4d603b9eb32a801df4064d91b8174cde
+Requires: R.methodsS3, R.oo
 
 Package: R6
 Source: CRAN
@@ -308,6 +337,17 @@ Source: CRAN
 Version: 1.3-20
 Hash: 1d661b615b3f5c3f7d0ea02fcf658c02
 
+Package: breakaway
+Source: github
+Version: 4.6.11
+Hash: eee0f5811ee3fcfcd406486772d4d4ef
+Requires: MASS, R.rsp, dplyr, ggplot2, magrittr, phyloseq, reshape2,
+    testthat, tibble
+GithubRepo: breakaway
+GithubUsername: adw96
+GithubRef: master
+GithubSha1: e81c91b9628afc5c5e1646e9a359d6cebfa70a9c
+
 Package: broom
 Source: CRAN
 Version: 0.5.0
@@ -343,7 +383,14 @@ Package: chemometrics
 Source: CRAN
 Version: 1.4.2
 Hash: 9d8c6de74cd7b832ec4ef9b22fda0dba
-Requires: MASS, e1071, lars, mclust, nnet, pcaPP, pls, robustbase, som
+Requires: MASS, class, e1071, lars, mclust, nnet, pcaPP, pls,
+    robustbase, rpart, som
+
+Package: class
+Source: CRAN
+Version: 7.3-15
+Hash: 091170a909a9ab4165e312e699509560
+Requires: MASS
 
 Package: cli
 Source: CRAN
@@ -447,6 +494,13 @@ Package: e1071
 Source: CRAN
 Version: 1.7-0
 Hash: 54c6b974d385e3c0961eb4cefc9ea0c5
+Requires: class
+
+Package: ellipsis
+Source: CRAN
+Version: 0.2.0.1
+Hash: f1c603e7493506909ebbde7bee39a33f
+Requires: rlang
 
 Package: energy
 Source: CRAN
@@ -497,6 +551,12 @@ Version: 1.2.6
 Hash: 88d3a977a2fca91cc44c36f8717bc481
 Requires: Rcpp
 
+Package: furrr
+Source: CRAN
+Version: 0.1.0
+Hash: 2bf07dd5ce0ab262a081cc9f0555b670
+Requires: future, globals, purrr, rlang
+
 Package: futile.logger
 Source: CRAN
 Version: 1.4.3
@@ -508,11 +568,22 @@ Source: CRAN
 Version: 1.0.1
 Hash: c5a7e0ce07509a8561881c8860270d71
 
+Package: future
+Source: CRAN
+Version: 1.14.0
+Hash: be5e13b4f7a76297c720059f04845aeb
+Requires: digest, globals, listenv
+
 Package: gdtools
 Source: CRAN
 Version: 0.1.7
 Hash: 1cce66a628a2682507cdcf6f1b4c9826
 Requires: Rcpp, withr
+
+Package: generics
+Source: CRAN
+Version: 0.0.2
+Hash: 0a2498d0288de2a2dabf31438562c2b1
 
 Package: ggplot2
 Source: CRAN
@@ -531,6 +602,12 @@ Package: git2r
 Source: CRAN
 Version: 0.23.0
 Hash: f7190a7a4b5c5f0983b4b6ee29ed7bc3
+
+Package: globals
+Source: CRAN
+Version: 0.12.4
+Hash: 813a6280042ee82fa529833489333322
+Requires: codetools
 
 Package: glue
 Source: CRAN
@@ -653,6 +730,11 @@ Package: lazyeval
 Source: CRAN
 Version: 0.2.1
 Hash: 88926ad9c43581fd0822a37c8ed09f05
+
+Package: listenv
+Source: CRAN
+Version: 0.7.0
+Hash: f5e0d09f4e42d749ae0f893cff1817b6
 
 Package: lme4
 Source: CRAN
@@ -846,6 +928,11 @@ Version: 1.8.4
 Hash: d1f100e0dbbf8d3f55aa701b07c62e35
 Requires: Rcpp
 
+Package: praise
+Source: CRAN
+Version: 1.0.0
+Hash: 77da8f1df873a4b91e5c4a68fe2fb1b6
+
 Package: prettyunits
 Source: CRAN
 Version: 1.0.2
@@ -958,8 +1045,8 @@ Requires: curl, data.table, foreign, haven, openxlsx, readxl, tibble
 
 Package: rlang
 Source: CRAN
-Version: 0.3.0.1
-Hash: 35fb7a51d5d756c56f793ed9c381fb84
+Version: 0.4.0
+Hash: eabda67321fe1d477ea641ddd5d84f00
 
 Package: rmarkdown
 Source: CRAN
@@ -974,11 +1061,23 @@ Version: 0.93-3
 Hash: b5e58297f611d55bca17c7fce64d9675
 Requires: DEoptimR
 
+Package: rpart
+Source: CRAN
+Version: 4.1-15
+Hash: d3f35b9f17b8c0253558ac16fd80dab7
+
 Package: rprojroot
 Source: CRAN
 Version: 1.3-2
 Hash: a25c3f70c166fb3fbabc410eb32b6366
 Requires: backports
+
+Package: rsample
+Source: CRAN
+Version: 0.0.5
+Hash: 4ec16ba35238357bdb53454bb4781a43
+Requires: dplyr, furrr, generics, purrr, rlang, tibble, tidyr,
+    tidyselect
 
 Package: rstudioapi
 Source: CRAN
@@ -1053,6 +1152,13 @@ Source: CRAN
 Version: 0.36.1
 Hash: 7452241748b3e55ac77dd7ce1ebed062
 
+Package: testthat
+Source: CRAN
+Version: 2.2.1
+Hash: ec68d8eb0203c88d5efa62e67fba2a97
+Requires: R6, cli, crayon, digest, evaluate, magrittr, praise, rlang,
+    withr
+
 Package: tibble
 Source: CRAN
 Version: 1.4.2
@@ -1104,6 +1210,12 @@ Source: CRAN
 Version: 0.1-2
 Hash: 69acbbcf4dcff3a258f94de540214001
 
+Package: vctrs
+Source: CRAN
+Version: 0.2.0
+Hash: daf77cb3dbcacd7fb619cb3748dc215f
+Requires: backports, digest, ellipsis, glue, rlang, zeallot
+
 Package: vegan
 Source: CRAN
 Version: 2.5-3
@@ -1152,6 +1264,11 @@ Package: yaml
 Source: CRAN
 Version: 2.2.0
 Hash: a5ad5616d83d89f8d84cbf3cf4034e13
+
+Package: zeallot
+Source: CRAN
+Version: 0.1.0
+Hash: 10b2ed48e202b4db421ae864041dc4b2
 
 Package: zip
 Source: CRAN
