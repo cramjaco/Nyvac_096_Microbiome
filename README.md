@@ -1,7 +1,7 @@
 Nyvac096Microbiome
 
 Jacob A. Cram
-jcram@fhcrc.org
+jcram@umces.edu
 cramjaco@gmail.com
 
 This directory accompanies the manuscript "The human gut microbiota associated with baselin eimmune status and response to HIV vaccines". As of this writing this manuscript is accepted but not published at Plos ONE. This directory contains materials to run both the upstream processing of the microbiome data (demultiplexing with Qiime, sequence variant assignment with DADA2, phylogenetic tree with phangorn, SV taxonomic assignment with DADA2) and downstream analysis (statistics in a notebook file in R).
