@@ -1,6 +1,6 @@
 ---
 title: An R Markdown document converted from "Mar2018_096.ipynb"
-output: html_notebook
+output: html_document
 ---
 
 The goal of this Notebook is to take the parts of NovemberPhyloProc.ipynb that I expect to go into the actual manuscript.
@@ -1404,7 +1404,8 @@ ggsave('figures/qq_permKernMir.png')
 ```
 
 ```{r}
-qqdata_permKernMir %>% ggplot(aes(x = sortedExpP, y = sortedP)) + geom_point(shape = 1) + geom_abline(intercept = 0, slope = 1) + geom_line(aes(y = lb), colour = "grey40") + geom_line(aes(y = ub), colour = "grey40") + scale_y_log10() + scale_x_log10()
+qqdata_permKernMir %>% ggplot(aes(x = sortedExpP, y = sortedP)) + geom_point(shape = 1) + geom_abline(intercept = 0, slope = 1) + geom_line(aes(y = lb), colour = "grey40") + geom_line(aes(y = ub), colour = "grey40") + scale_y_log10() + scale_x_log10() + 
+  labs(x = expression(paste("Expected ", italic("p"),"-value")), y = expression(paste("Observed ", italic("p"),"-value")))
 ```
 
 We see from the qqplot that we generally fall below the 1:1 line, suggesting that our P values are lower than we would expect from chance.
@@ -1970,6 +1971,7 @@ geom_point(data = WufPData %>% ungroup %>% fixant,
 
 scale_colour_manual(values=cbPalette) + 
 scale_fill_manual(values=alpha(cbPalette, 0.5)) + 
+labs(col = "month", fill = "month") +
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
      strip.text.y = (element_text(angle = 90))) -> pjsd0
@@ -2031,6 +2033,7 @@ geom_hline(yintercept=0.05, col = 'blue', alpha = 0.5) + geom_hline(yintercept=0
 scale_shape_manual(values = c(22, 21, 24)) +
 scale_colour_manual(values=cbPalette) + 
 scale_fill_manual(values=alpha(cbPalette, 0.5)) + 
+labs(col = "month", fill = "month", x = "Taxonomic Level") +
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1,, vjust = 0.5, size = 10),
      strip.text.y = (element_text(angle = 90))) -> pjsd
@@ -2203,12 +2206,14 @@ mutate(antigen = stringr::str_replace_all(antigen, " IgG ", "")) %>%
 ggplot(aes(x = factor(taxLevels), y = clr_q.value)) + geom_point(size = 0.1) +
 geom_hline(yintercept = 0.2, color = 'grey') +
  geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
-facet_wrap(~antigen + test) + scale_y_log10() +
+facet_wrap(~antigen + test) + scale_y_log10() + 
+  labs(y = "q-value", x = "Taxonomic Level") +
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ggsave('figures/LocalQEveryLevel.png')
 ```
+BOOKMARK
 
 ```{r}
 options(repr.plot.width=6, repr.plot.height=8)
@@ -2222,6 +2227,8 @@ ggplot(aes(x = factor(taxLevels), y = clr_p.value)) + geom_point(size = 0.1) +
 geom_hline(yintercept = 0.2, color = 'grey') +
  geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
 facet_wrap(~antigen + test) +# scale_y_log10() +
+  labs(y = expression(paste(italic("p"),"-value")), x = "Taxonomic Level") + 
+  
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ggsave('figures/LocalPEveryLevel.png')
@@ -2239,6 +2246,7 @@ ggplot(aes(x = factor(taxLevels), y = clr_p.value)) + geom_point(size = 0.1) +
 geom_hline(yintercept = 0.2, color = 'grey') +
  geom_hline(yintercept = 0.05, color = 'blue') + geom_hline(yintercept = 0.01, color = 'green') +
 facet_wrap(~antigen + test) + scale_y_log10() +
+labs(y = expression(paste(italic("p"),"-value")), x = "Taxonomic Level") + 
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ggsave('figures/LocalPEveryLevel_LogScale.png')
@@ -2277,7 +2285,7 @@ pass
 ```{r}
 LocalTests %>% pull(antigen) %>% unique
 ```
-
+  labs(y = expression(paste(italic("p"),"-value")), x = "Taxonomic Level") + 
 ```{r}
 # Family Hits
 LocalTests %>%
@@ -2312,9 +2320,13 @@ ggplot(aes(x = TaxonF, y = clr_estimate,
            color = (clr_p.value < 0.05), shape =(clr_q.value < 0.2))) +
 geom_point(size = 3) + 
 geom_errorbar(aes(ymin = clr_estimate - 2*clr_std.error, ymax = clr_estimate + 2*clr_std.error)) + 
+  labs(y = "Coefficient",
+       x = "Family Level Taxon",
+       col = expression(paste(italic("p"), "-value")),
+       shape = "q-value") +
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_hline(yintercept = 0) +
-facet_wrap(~antigen, ncol = 1, scales = 'free_y') + xlab("Family Level Taxon")
+facet_wrap(~antigen, ncol = 1, scales = 'free_y')
 # Show the censored ones accross - so this would be everything with at least one hit
 # but also show what they are in all cases.
 
