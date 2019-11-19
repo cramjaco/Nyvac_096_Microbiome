@@ -2211,7 +2211,7 @@ facet_wrap(~antigen + test) + scale_y_log10() +
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
-ggsave('figures/LocalQEveryLevel.png')
+ggsave('figures/LocalQEveryLevel.png', width = 6, height = 8, units = "in")
 ```
 BOOKMARK
 
@@ -2231,7 +2231,7 @@ facet_wrap(~antigen + test) +# scale_y_log10() +
   
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-ggsave('figures/LocalPEveryLevel.png')
+ggsave('figures/LocalPEveryLevel.png', width = 6, height = 8, units = "in")
 ```
 
 ```{r}
@@ -2249,7 +2249,7 @@ facet_wrap(~antigen + test) + scale_y_log10() +
 labs(y = expression(paste(italic("p"),"-value")), x = "Taxonomic Level") + 
 theme_bw() +
 theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-ggsave('figures/LocalPEveryLevel_LogScale.png')
+ggsave('figures/LocalPEveryLevel_LogScale.png', width = 6, height = 8, units = "in")
 ```
 
 ```{r}
