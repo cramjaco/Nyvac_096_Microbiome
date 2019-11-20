@@ -1,6 +1,6 @@
 ---
 title: An R Markdown document converted from "Mar2018_096.ipynb"
-output: html_document
+output: html_notebook
 ---
 
 The goal of this Notebook is to take the parts of NovemberPhyloProc.ipynb that I expect to go into the actual manuscript.
