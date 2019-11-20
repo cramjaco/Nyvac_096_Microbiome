@@ -3138,5 +3138,5 @@ DonorEffectGaus
 Same deal when I do a normal logistic regression.
 
 ```{r}
-save.image(file = "workspace.Rdata")
+#save.image(file = "workspace.Rdata")
 ```
